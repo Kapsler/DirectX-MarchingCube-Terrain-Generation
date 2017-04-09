@@ -163,6 +163,7 @@
   <ItemGroup>
     <ClCompile Include="CameraClass.cpp" />
     <ClCompile Include="DepthShaderClass.cpp" />
+    <ClCompile Include="GeometryData.cpp" />
     <ClCompile Include="LightClass.cpp" />
     <ClCompile Include="modelclass.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
@@ -179,6 +180,7 @@
   <ItemGroup>
     <ClInclude Include="CameraClass.h" />
     <ClInclude Include="DepthShaderClass.h" />
+    <ClInclude Include="GeometryData.h" />
     <ClInclude Include="LightClass.h" />
     <ClInclude Include="ltalloc.h" />
     <ClInclude Include="ltalloc.hpp" />
@@ -206,6 +208,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="GeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="PixelShader.hlsl">
       <FileType>Document</FileType>

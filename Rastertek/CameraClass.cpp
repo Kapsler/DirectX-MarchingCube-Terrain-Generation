@@ -81,15 +81,12 @@ void CameraClass::DoMovement(InputClass* input)
 	unsigned int skey = 0x53;
 	unsigned int akey = 0x41;
 	unsigned int dkey = 0x44;
-	unsigned int tkey = 0x54;
-	unsigned int rkey = 0x52;
-	unsigned int ekey = 0x45;
 	Vector3 movementDirection;
 	timer->Frame();
 
 
 	float deltaTime = timer->GetFrameTime();
-	float cameraSpeed = 0.2f * deltaTime;
+	float cameraSpeed = 0.1f * deltaTime;
 	viewQuaternion.Inverse(viewQuaternion);
 
 		//Movement

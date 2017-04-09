@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include "modelclass.h"
+#include "GeometryData.h"
 
 GraphicsClass::GraphicsClass()
 {
@@ -94,6 +95,10 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	light->SetDiffuseColor(1.0, 1.0, 1.0, 1.0f);
 	light->SetLookAt(0.0f, 0.0f, 20.0f);
 	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
+
+	GeometryData geo(32, 32, 32);
+	geo.GenerateData();
+	//geo.DebugPrint();
 
 	//HARDCODED END
 
@@ -443,7 +448,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	}
 
 	//clear Buffer at beginning
-	SetScreenBuffer(0.2f, 0.2f, 0.2f, 0.0f);
+	SetScreenBuffer(0.0f, 0.0f, 0.0f, 1.0f);
 	//direct3D->BeginScene(0.2f, 0.5f, 0.5f, 0.0f);
 
 	//Generate view matrix based on camera
@@ -470,6 +475,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	ID3D11RasterizerState* rsstate;
 	direct3D->GetDeviceContext()->OMGetDepthStencilState(&depthstate, nullptr);
 	direct3D->GetDeviceContext()->RSGetState(&rsstate);
+	direct3D->GetDeviceContext()->GSSetShader(nullptr, nullptr, 0);
 	m_spriteBatch->Begin(SpriteSortMode_Deferred, nullptr, nullptr, depthstate, rsstate);
 
 	RenderText(".", Vector2(currentScreenWidth / 2.0f, currentScreenHeight / 2.0f), true);
