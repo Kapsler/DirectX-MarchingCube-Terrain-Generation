@@ -10,11 +10,18 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	//2.0f to decrease density
 	m_cubeStep = DirectX::XMFLOAT3(2.0f / m_cubeSize.x, 2.0f / m_cubeSize.y, 2.0f / m_cubeSize.z);
 	worldMatrix = DirectX::XMMatrixIdentity();
+	m_data = new float[m_width*m_depth*m_height];
 
-	switch(type)
+	switch (type)
 	{
 	case TerrainType::CUBE:
 		GenerateCubeData();
+		break;
+	case TerrainType::SPHERE:
+		GenerateSphereData();
+		break;
+	case TerrainType::PILLAR:
+		GeneratePillarData();
 		break;
 	}
 
@@ -30,7 +37,7 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 
 GeometryData::~GeometryData()
 {
-	if(m_vertexBuffer)
+	if (m_vertexBuffer)
 	{
 		m_vertexBuffer->Release();
 		m_vertexBuffer = nullptr;
@@ -53,28 +60,27 @@ GeometryData::~GeometryData()
 
 void GeometryData::GenerateCubeData()
 {
-	m_data = new float[m_width*m_depth*m_height];
-
 	unsigned int width_offset = m_width / 4;
 	unsigned int height_offset = m_height / 4;
 	unsigned int depth_offset = m_depth / 4;
 
 	size_t index = 0;
 
-	for(size_t i = 0u; i < m_depth; ++i)
+	for (size_t i = 0u; i < m_depth; ++i)
 	{
 		for (size_t j = 0u; j < m_height; ++j)
 		{
 			for (size_t k = 0u; k < m_width; ++k)
 			{
 
-				if(
-					k >= 0 + width_offset && k <= m_width - width_offset 
+				if (
+					k >= 0 + width_offset && k <= m_width - width_offset
 					&& j >= 0 + height_offset && j <= m_height - height_offset
 					&& i >= 0 + depth_offset && i <= m_depth - depth_offset)
 				{
 					m_data[index] = 1.0f;
-				} else
+				}
+				else
 				{
 					m_data[index] = -1.0f;
 				}
@@ -86,6 +92,75 @@ void GeometryData::GenerateCubeData()
 	}
 
 
+}
+
+float GeometryData::getDistance(const float& p1x, const float& p1y, const float& p1z, const float& p2x, const float& p2y, const float& p2z)
+{
+	float dx, dy, dz;
+
+	dx = p2x - p1x;
+	dy = p2y - p1y;
+	dz = p2z - p1z;
+
+	return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+float GeometryData::getDistance2D(const float& p1x, const float& p1y, const float& p2x, const float& p2y)
+{
+	float dx, dy;
+
+	dx = p2x - p1x;
+	dy = p2y - p1y;
+
+	return sqrt(dx * dx + dy * dy);
+}
+
+void GeometryData::GenerateSphereData()
+{
+	DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(m_width / 2.0f, m_height / 2.0f, m_depth / 2.0f);
+
+	size_t index = 0u;
+	float maxDistance = m_width / 2.0f;
+
+	for (UINT z = 0; z < m_depth; z++)
+	{
+		for (UINT y = 0; y < m_height; y++)
+		{
+			for (UINT x = 0; x < m_width; x++)
+			{
+				//Take distance's complement so the nearer to the center the bigger the density
+				m_data[index] = 1.0f - (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), center.x, center.y, center.z) / maxDistance);;
+
+				index++;
+			}
+		}
+	}
+}
+
+void GeometryData::GeneratePillarData()
+{
+	DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(m_width / 2.0f, m_height / 2.0f, m_depth / 2.0f);
+	//DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(0,0,0);
+	//DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(static_cast<float>(m_width), static_cast<float>(m_height), static_cast<float>(m_depth));
+
+	size_t index = 0u;
+	float maxDistance = m_width / 2.0f;
+	float depthStep = 1.0f / m_depth;
+
+	for (UINT z = 0; z < m_depth; z++)
+	{
+		for (UINT y = 0; y < m_height; y++)
+		{
+			for (UINT x = 0; x < m_width; x++)
+			{
+				//Take distance's complement so the nearer to the center the bigger the density
+				m_data[index] = 1.0f - (getDistance2D(static_cast<float>(x), static_cast<float>(y), center.x, center.y) / maxDistance);;
+
+				index++;
+			}
+		}
+		
+	}
 }
 
 int GeometryData::GetVertices(VertexInputType** outVertices)
@@ -103,7 +178,7 @@ int GeometryData::GetVertices(VertexInputType** outVertices)
 			for (float x = -1; x < 1.0f; x += m_cubeStep.x)
 			{
 				(*outVertices)[idx].position = DirectX::XMFLOAT3(x, y, z);
-				(*outVertices)[idx].color = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+				(*outVertices)[idx].color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
 				idx++;
 			}
@@ -199,7 +274,7 @@ ID3D11ShaderResourceView* GeometryData::CreateDensityShaderResource(ID3D11Device
 	return output;
 }
 
-ID3D11ShaderResourceView* GeometryData::CreateTriangleLUTShaderResource(ID3D11Device* device) const 
+ID3D11ShaderResourceView* GeometryData::CreateTriangleLUTShaderResource(ID3D11Device* device) const
 {
 	ID3D11ShaderResourceView* output;
 
@@ -297,10 +372,11 @@ void GeometryData::DebugPrint()
 		{
 			for (size_t k = 0u; k < m_width; ++k)
 			{
-				if(m_data[index] == -1)
+				if (m_data[index] == -1)
 				{
 					output[k] = '0';
-				} else
+				}
+				else
 				{
 					output[k] = '1';
 				}

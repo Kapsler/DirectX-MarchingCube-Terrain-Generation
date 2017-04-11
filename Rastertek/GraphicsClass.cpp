@@ -96,7 +96,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	light->SetLookAt(0.0f, 0.0f, 20.0f);
 	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
 
-	terrain = new GeometryData(32, 32, 32, GeometryData::TerrainType::CUBE, direct3D->GetDevice(), direct3D->GetDeviceContext());
+	terrain = new GeometryData(32, 32, 32, GeometryData::TerrainType::PILLAR, direct3D->GetDevice(), direct3D->GetDeviceContext());
 	//terrain->DebugPrint();
 	terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(2.0f, 2.0f, 2.0f);
 

@@ -11,7 +11,9 @@ public:
 	{
 		enum Enum
 		{
-			CUBE
+			CUBE,
+			SPHERE,
+			PILLAR
 		};
 	};
 
@@ -38,6 +40,10 @@ private:
 	};
 
 	void GenerateCubeData();
+	float getDistance(const float& p1x, const float& p1y, const float& p1z, const float& p2x, const float& p2y, const float& p2z);
+	float getDistance2D(const float& p1x, const float& p1y, const float& p2x, const float& p2y);
+	void GenerateSphereData();
+	void GeneratePillarData();
 
 	int GetVertices(VertexInputType** outVertices);
 	void InitializeBuffers(ID3D11Device*);
