@@ -1,7 +1,9 @@
 #pragma once
 #include <d3d11.h>
 #include <directxmath.h>
-
+#include <noise\noise.h>
+#include <random>
+#include <chrono>
 
 class GeometryData
 {
@@ -13,7 +15,10 @@ public:
 		{
 			CUBE,
 			SPHERE,
-			PILLAR
+			BUMPY_SPHERE,
+			PILLAR,
+			NOISE,
+			BUMPY_PILLAR
 		};
 	};
 
@@ -44,6 +49,9 @@ private:
 	float getDistance2D(const float& p1x, const float& p1y, const float& p2x, const float& p2y);
 	void GenerateSphereData();
 	void GeneratePillarData();
+	void GenerateNoiseData();
+	void GenerateBumpySphere();
+	void GenerateBumpyPillar();
 
 	int GetVertices(VertexInputType** outVertices);
 	void InitializeBuffers(ID3D11Device*);
@@ -70,4 +78,6 @@ private:
 	unsigned int m_vertexCount;
 	DirectX::XMFLOAT3 m_cubeSize;
 	DirectX::XMFLOAT3 m_cubeStep;
+	noise::module::Perlin m_perlin;
+	double m_noiseOffset;
 };

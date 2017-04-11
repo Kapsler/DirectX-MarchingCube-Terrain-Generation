@@ -290,11 +290,11 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 
 	//Set up raster description, determines how polygons are drawn
 	rasterizerDescription.AntialiasedLineEnable = true;
-	rasterizerDescription.CullMode = D3D11_CULL_BACK;
+	rasterizerDescription.CullMode = D3D11_CULL_NONE;
 	rasterizerDescription.DepthBias = 0;
 	rasterizerDescription.DepthBiasClamp = 0.0f;
 	rasterizerDescription.DepthClipEnable = true;
-	rasterizerDescription.FillMode = D3D11_FILL_SOLID;
+	rasterizerDescription.FillMode = D3D11_FILL_WIREFRAME;
 	rasterizerDescription.FrontCounterClockwise = false;
 	rasterizerDescription.MultisampleEnable = true;
 	rasterizerDescription.ScissorEnable = false;

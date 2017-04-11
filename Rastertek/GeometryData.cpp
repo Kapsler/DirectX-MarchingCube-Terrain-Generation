@@ -1,16 +1,18 @@
 #include "GeometryData.h"
-#include <iostream>
 #include "TriangleLUT.h"
 
 GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, TerrainType::Enum type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 	: m_width(width), m_height(height), m_depth(depth)
 {
 
-	m_cubeSize = DirectX::XMFLOAT3(32.0f, 32.0f, 32.0f);
+	m_cubeSize = DirectX::XMFLOAT3(64.0f, 64.0f, 64.0f);
 	//2.0f to decrease density
 	m_cubeStep = DirectX::XMFLOAT3(2.0f / m_cubeSize.x, 2.0f / m_cubeSize.y, 2.0f / m_cubeSize.z);
 	worldMatrix = DirectX::XMMatrixIdentity();
 	m_data = new float[m_width*m_depth*m_height];
+
+	std::mt19937 generator(static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+	m_noiseOffset = generator();
 
 	switch (type)
 	{
@@ -22,6 +24,15 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 		break;
 	case TerrainType::PILLAR:
 		GeneratePillarData();
+		break;
+	case TerrainType::NOISE:
+		GenerateNoiseData();
+		break;
+	case TerrainType::BUMPY_SPHERE:
+		GenerateBumpySphere();
+		break;
+	case TerrainType::BUMPY_PILLAR:
+		GenerateBumpyPillar();
 		break;
 	}
 
@@ -66,19 +77,20 @@ void GeometryData::GenerateCubeData()
 
 	size_t index = 0;
 
-	for (size_t i = 0u; i < m_depth; ++i)
+	for (size_t z = 0u; z < m_depth; ++z)
 	{
-		for (size_t j = 0u; j < m_height; ++j)
+		for (size_t y = 0u; y < m_height; ++y)
 		{
-			for (size_t k = 0u; k < m_width; ++k)
+			for (size_t x = 0u; x < m_width; ++x)
 			{
 
 				if (
-					k >= 0 + width_offset && k <= m_width - width_offset
-					&& j >= 0 + height_offset && j <= m_height - height_offset
-					&& i >= 0 + depth_offset && i <= m_depth - depth_offset)
+					x >= 0 + width_offset && x <= m_width - width_offset
+					&& y >= 0 + height_offset && y <= m_height - height_offset
+					&& z >= 0 + depth_offset && z <= m_depth - depth_offset)
 				{
 					m_data[index] = 1.0f;
+
 				}
 				else
 				{
@@ -139,13 +151,89 @@ void GeometryData::GenerateSphereData()
 
 void GeometryData::GeneratePillarData()
 {
+
+	size_t index = 0u;
+	float maxDistance = m_width / 25.0f;
+
+	for (UINT z = 0; z < m_depth; z++)
+	{
+		for (UINT y = 0; y < m_height; y++)
+		{
+			DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(m_width / 2.0f, static_cast<float>(y), m_depth / 2.0f);
+
+			for (UINT x = 0; x < m_width; x++)
+			{
+				//Take distance's complement so the nearer to the center the bigger the density
+				m_data[index] = 1.0f - (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), center.x, center.y, center.z) / maxDistance);
+
+				index++;
+			}
+		}
+
+	}
+}
+void GeometryData::GenerateBumpyPillar()
+{
+
+	size_t index = 0u;
+	float maxDistance = m_width / 25.0f;
+
+	for (UINT z = 0; z < m_depth; z++)
+	{
+		for (UINT y = 0; y < m_height; y++)
+		{
+			DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(m_width / 2.0f, static_cast<float>(y), m_depth / 2.0f);
+
+			for (UINT x = 0; x < m_width; x++)
+			{
+				float result = 1.0f - (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), center.x, center.y, center.z) / maxDistance);
+				
+
+				float valueX = (float)x / (float)m_width * 3.0f;
+				float valueY = (float)y / (float)m_height * 3.0f;
+				float valueZ = (float)z / (float)m_depth * 3.0f;
+
+				result += (float)m_perlin.GetValue(valueX + m_noiseOffset, valueY + m_noiseOffset, valueZ + m_noiseOffset) / 3.0f;
+
+				m_data[index] = result;
+				index++;
+			}
+		}
+
+	}
+}
+
+void GeometryData::GenerateNoiseData()
+{
+	size_t index = 0u;
+
+	for (UINT z = 0; z < m_depth; z++)
+	{
+		for (UINT y = 0; y < m_height; y++)
+		{
+			DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(m_width / 2.0f, static_cast<float>(y), m_depth / 2.0f);
+
+			for (UINT x = 0; x < m_width; x++)
+			{
+				float valueX = (float)x / (float)m_width * 3.0f;
+				float valueY = (float)y / (float)m_height * 3.0f;
+				float valueZ = (float)z / (float)m_depth * 3.0f;
+
+				m_data[index] = (float)m_perlin.GetValue(valueX + m_noiseOffset, valueY + m_noiseOffset, valueZ + m_noiseOffset);
+
+				index++;
+			}
+		}
+
+	}
+}
+
+void GeometryData::GenerateBumpySphere()
+{
 	DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(m_width / 2.0f, m_height / 2.0f, m_depth / 2.0f);
-	//DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(0,0,0);
-	//DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(static_cast<float>(m_width), static_cast<float>(m_height), static_cast<float>(m_depth));
 
 	size_t index = 0u;
 	float maxDistance = m_width / 2.0f;
-	float depthStep = 1.0f / m_depth;
 
 	for (UINT z = 0; z < m_depth; z++)
 	{
@@ -153,13 +241,19 @@ void GeometryData::GeneratePillarData()
 		{
 			for (UINT x = 0; x < m_width; x++)
 			{
-				//Take distance's complement so the nearer to the center the bigger the density
-				m_data[index] = 1.0f - (getDistance2D(static_cast<float>(x), static_cast<float>(y), center.x, center.y) / maxDistance);;
+				float result = 1.0f - (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), center.x, center.y, center.z) / maxDistance);
+
+				float valueX = (float)x / (float)m_width * 3.0f;
+				float valueY = (float)y / (float)m_height * 3.0f;
+				float valueZ = (float)z / (float)m_depth * 3.0f;
+
+				result += (float)m_perlin.GetValue(valueX + m_noiseOffset, valueY + m_noiseOffset, valueZ + m_noiseOffset) / 20.0f;
+
+				m_data[index] = result;
 
 				index++;
 			}
 		}
-		
 	}
 }
 

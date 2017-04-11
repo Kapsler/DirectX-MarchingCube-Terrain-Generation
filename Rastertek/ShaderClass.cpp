@@ -83,7 +83,7 @@ bool ShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* verte
 	DWORD shaderflags = 
 		D3DCOMPILE_ENABLE_STRICTNESS 
 	| D3DCOMPILE_DEBUG 
-	| D3DCOMPILE_SKIP_OPTIMIZATION
+	//| D3DCOMPILE_SKIP_OPTIMIZATION
 	;
 
 	errorMessage = nullptr;
