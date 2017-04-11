@@ -14,6 +14,7 @@
 #include <Effects.h>
 #include <CommonStates.h>
 #include "PerformanceTimer.h"
+#include "GeometryData.h"
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
@@ -75,4 +76,5 @@ private:
 	BasicEffect* basicEffect;
 	ID3D11InputLayout* inputLayout;
 	
+	GeometryData* terrain;
 };

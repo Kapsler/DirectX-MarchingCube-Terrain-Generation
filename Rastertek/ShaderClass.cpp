@@ -54,6 +54,21 @@ bool ShaderClass::Render(ID3D11DeviceContext* context, int indexCount, int insta
 	return true;
 }
 
+bool ShaderClass::Render(ID3D11DeviceContext* context, int vertexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
+{
+	bool result;
+
+	result = SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix);
+	if (!result)
+	{
+		return false;
+	}
+
+	RenderShader(context, vertexCount);
+
+	return true;
+}
+
 bool ShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vertexFilename, WCHAR* geometryFilename, WCHAR* pixelFilename)
 {
 	HRESULT result;
@@ -325,6 +340,23 @@ bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX wor
 	context->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 
 	return true;
+}
+
+void ShaderClass::RenderShader(ID3D11DeviceContext* context, int vertexCount)
+{
+	//Vertex Input Layout
+	context->IASetInputLayout(layout);
+
+	//Set Shaders
+	context->VSSetShader(vertexShader, nullptr, 0);
+	context->GSSetShader(geometryShader, nullptr, 0);
+	context->PSSetShader(pixelShader, nullptr, 0);
+
+	//Set sample States
+	context->PSSetSamplers(0, 1, &sampleStateWrap);
+	context->PSSetSamplers(1, 1, &sampleStateClamp);
+
+	context->Draw(vertexCount, 0);
 }
 
 void ShaderClass::RenderShader(ID3D11DeviceContext* context, int indexCount, int instanceCount)

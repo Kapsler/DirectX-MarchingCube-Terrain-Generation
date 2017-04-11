@@ -96,9 +96,9 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	light->SetLookAt(0.0f, 0.0f, 20.0f);
 	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
 
-	GeometryData geo(32, 32, 32);
-	geo.GenerateData();
-	//geo.DebugPrint();
+	terrain = new GeometryData(32, 32, 32, GeometryData::TerrainType::CUBE, direct3D->GetDevice());
+	terrain->DebugPrint();
+	terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(2.0f, 2.0f, 2.0f);
 
 	//HARDCODED END
 
@@ -177,6 +177,13 @@ void GraphicsClass::Shutdown()
 		delete renderTexture;
 		renderTexture = nullptr;
 	}
+
+	if(terrain)
+	{
+		delete terrain;
+		terrain = nullptr;
+	}
+
 
 	if (light)
 	{
@@ -459,6 +466,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	//direct3D->GetWorldMatrix(worldMatrix);
 	camera->GetViewMatrix(viewMatrix);
 	direct3D->GetProjectionMatrix(projectionMatrix);
+	direct3D->GetWorldMatrix(translateMatrix);
 
 	//Lighting
 	light->GenerateViewMatrix();
@@ -466,9 +474,9 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	light->GetProjectionMatrix(lightProjectionMatrix);
 	
 	//Render Geometry
-	testmodel.Render(direct3D->GetDeviceContext());
-	direct3D->GetWorldMatrix(translateMatrix);
-	shader->Render(direct3D->GetDeviceContext(), testmodel.GetIndexCount(), 1, translateMatrix, viewMatrix, projectionMatrix);
+	//testmodel.Render(direct3D->GetDeviceContext());
+	terrain->Render(direct3D->GetDeviceContext());
+	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix);
 
 	//Text
 	ID3D11DepthStencilState* depthstate;

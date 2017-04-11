@@ -19,6 +19,8 @@ public:
 	void Shutdown();
 	bool Render(ID3D11DeviceContext* context, int indexCount, int instanceCount,
 		XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX	projectionMatrix);
+	bool Render(ID3D11DeviceContext* context, int vertexCount,
+		XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX	projectionMatrix);
 
 private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR* geometryFilename, WCHAR*);
@@ -26,7 +28,8 @@ private:
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
 	bool SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix);
-	void RenderShader(ID3D11DeviceContext*, int, int);
+	void RenderShader(ID3D11DeviceContext*, int vertexCount);
+	void RenderShader(ID3D11DeviceContext*, int indexCount, int instanceCount);
 
 	struct MatrixBufferType
 	{

@@ -22,7 +22,8 @@ void main(
 
 	float4 position = input[0].pos;
 	float4 color = input[0].color;
-	float4 otherColor = float4(1.0f, 0.0f, 1.0f, 1.0f);
+    float4 otherColor1 = float4(0.0f, 0.0f, 1.0f, 1.0f);
+	float4 otherColor2 = float4(0.0f, 1.0f, 0.0f, 1.0f);
 
 	element.position = position;
 	element.color = color;
@@ -31,14 +32,13 @@ void main(
 	element.position = position;
 	element.position.x = position.x + offset * 0.5f;
 	element.position.y = position.y + offset;
-	element.color = otherColor;
+	element.color = otherColor1;
 	output.Append(element);
 
 	element.position = position;
 	element.position.x = position.x + offset;
-	element.color = otherColor;
+	element.color = otherColor2;
 	output.Append(element);
-	
 
 	output.RestartStrip();
 	
