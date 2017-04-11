@@ -20,7 +20,8 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	m_texDesc = CreateTextureDesc();
 	m_subData = CreateSubresourceData();
 	m_texture3D = CreateTexture(device, m_texDesc, m_subData);
-	m_shaderResourceView = CreateShaderResourceView(device, m_texture3D);
+	m_densityMap = CreateShaderResourceView(device, m_texture3D);
+	m_sampler = CreateSamplerState(device);
 	InitializeBuffers(device);
 }
 
@@ -32,10 +33,10 @@ GeometryData::~GeometryData()
 		m_vertexBuffer = nullptr;
 	}
 
-	if (m_shaderResourceView)
+	if (m_densityMap)
 	{
-		m_shaderResourceView->Release();
-		m_shaderResourceView = nullptr;
+		m_densityMap->Release();
+		m_densityMap = nullptr;
 	}
 
 	if (m_texture3D)
@@ -195,6 +196,29 @@ ID3D11ShaderResourceView* GeometryData::CreateShaderResourceView(ID3D11Device* d
 	return output;
 }
 
+ID3D11SamplerState* GeometryData::CreateSamplerState(ID3D11Device* device) const
+{
+	ID3D11SamplerState* output;
+
+	//Create a basic point sampler for sampling our density data in the gpu
+	//should refactor this elsewhere
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	//sampDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+	//sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = 0;
+
+	device->CreateSamplerState(&sampDesc, &output);
+
+	return output;
+}
+
 void GeometryData::DebugPrint()
 {
 	char* output = new char[m_width + 1];
@@ -238,6 +262,11 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext)
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+	//Density Map to use
+	deviceContext->GSSetShaderResources(0, 1, &m_densityMap);
+	//Set point sampler to use in the geometry shader
+	deviceContext->GSSetSamplers(0, 1, &m_sampler);
 }
 
 unsigned GeometryData::GetVertexCount()

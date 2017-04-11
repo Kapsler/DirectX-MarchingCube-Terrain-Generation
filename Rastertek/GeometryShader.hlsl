@@ -4,42 +4,60 @@ struct GSInput
 	float4 color : COLOR;
 };
 
-
 struct PixelInputType
 {
 	float4 position : SV_POSITION;
 	float4 color : COLOR0;
 };
 
-[maxvertexcount(18)]
+cbuffer MatrixBuffer
+{
+    matrix worldMatrix;
+    matrix viewMatrix;
+    matrix projectionMatrix;
+};
+
+//Generic sampler
+SamplerState samplerPoint : register(s0);
+//The texture containing the density values
+Texture3D<float> densityTex : register(t0);
+
+[maxvertexcount(3)]
 void main(
 	point GSInput input[1] : SV_POSITION, 
 	inout TriangleStream<PixelInputType> output
 )
 {
-	float offset = 1.0f;
 	PixelInputType element;
+    float offset = 0.05f;
 
-	float4 position = input[0].pos;
-	float4 color = input[0].color;
-    float4 otherColor1 = float4(0.0f, 0.0f, 1.0f, 1.0f);
-	float4 otherColor2 = float4(0.0f, 1.0f, 0.0f, 1.0f);
-
-	element.position = position;
-	element.color = color;
-	output.Append(element);
-	
-	element.position = position;
-	element.position.x = position.x + offset * 0.5f;
-	element.position.y = position.y + offset;
-	element.color = otherColor1;
-	output.Append(element);
-
-	element.position = position;
-	element.position.x = position.x + offset;
-	element.color = otherColor2;
+    float4 position = input[0].pos;
+    position = mul(position, worldMatrix);
+    position = mul(position, viewMatrix);
+    position = mul(position, projectionMatrix);
+    float density = densityTex.SampleLevel(samplerPoint, (input[0].pos.xyz + 1) / 2.0f, 0);
+    float4 color = float4(density, 0.1f, 0.1f, 1.0f);
+    
+	// Calculate the position of the vertex against the world, view, and projection matrices.
+    element.position = position;
+    element.position.x -= offset / 2.0f;
+    element.position.y -= offset / 2.0f;
+    element.color = color;
 	output.Append(element);
 
-	output.RestartStrip();
+	// Calculate the position of the vertex against the world, view, and projection matrices.
+    element.position = position;
+    element.position.y += offset / 2.0f;
+    element.color = color;
+    output.Append(element);
+
+    // Calculate the position of the vertex against the world, view, and projection matrices.
+    element.position = position;
+    element.position.x += offset / 2.0f;
+    element.position.y -= offset / 2.0f;
+    element.color = color;
+    output.Append(element);
+
+    output.RestartStrip();
 	
 }

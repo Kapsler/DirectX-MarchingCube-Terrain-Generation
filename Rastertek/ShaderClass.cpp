@@ -338,6 +338,7 @@ bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX wor
 
 	//Set constant buffer
 	context->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+	context->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
 
 	return true;
 }

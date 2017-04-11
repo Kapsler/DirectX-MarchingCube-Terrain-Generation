@@ -39,11 +39,13 @@ private:
 	D3D11_SUBRESOURCE_DATA CreateSubresourceData() const;
 	ID3D11Texture3D* CreateTexture(ID3D11Device* device, D3D11_TEXTURE3D_DESC texDesc, D3D11_SUBRESOURCE_DATA subData) const;
 	ID3D11ShaderResourceView* CreateShaderResourceView(ID3D11Device* device, ID3D11Texture3D* texture3D) const;
+	ID3D11SamplerState* CreateSamplerState(ID3D11Device* device) const;
 
 	D3D11_TEXTURE3D_DESC m_texDesc;
 	D3D11_SUBRESOURCE_DATA m_subData;
 	ID3D11Texture3D* m_texture3D;
-	ID3D11ShaderResourceView* m_shaderResourceView;
+	ID3D11ShaderResourceView* m_densityMap; 
+	ID3D11SamplerState* m_sampler;
 	ID3D11Buffer *m_vertexBuffer;
 
 	float* m_data;
