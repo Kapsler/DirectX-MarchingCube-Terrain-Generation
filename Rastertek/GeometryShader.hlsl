@@ -81,16 +81,16 @@ void main(
         cubePoses[i] = position.xyz + decal[i].xyz;
         cubeVals[i] = densityTex.SampleLevel(samplerPoint, (cubePoses[i] + 1.0f) / 2.0f, 0);
     }
-
+    
     int cubeindex = 0;
     cubeindex = int(cubeVals[0] < isolevel);
-    cubeindex += int(cubeVals[1] < isolevel) * 2;
-    cubeindex += int(cubeVals[2] < isolevel) * 4;
-    cubeindex += int(cubeVals[3] < isolevel) * 8;
-    cubeindex += int(cubeVals[4] < isolevel) * 16;
-    cubeindex += int(cubeVals[5] < isolevel) * 32;
-    cubeindex += int(cubeVals[6] < isolevel) * 64;
-    cubeindex += int(cubeVals[7] < isolevel) * 128;
+    cubeindex += int(cubeVals[1] < isolevel) << 1;
+    cubeindex += int(cubeVals[2] < isolevel) << 2;
+    cubeindex += int(cubeVals[3] < isolevel) << 3;
+    cubeindex += int(cubeVals[4] < isolevel) << 4;
+    cubeindex += int(cubeVals[5] < isolevel) << 5;
+    cubeindex += int(cubeVals[6] < isolevel) << 6;
+    cubeindex += int(cubeVals[7] < isolevel) << 7;
 
     if (cubeindex != 0 && cubeindex != 255)
     {
@@ -115,8 +115,6 @@ void main(
         GSOuput v1;
         GSOuput v2;
 
-        float3 vector1;
-        float3 vector2;
         for (int i = 0; checkTriangleLUT(cubeindex, i) != -1; i += 3)
         {
 			//Add vertices to the output stream
