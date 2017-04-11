@@ -38,25 +38,24 @@ void main(
     float density = densityTex.SampleLevel(samplerPoint, (input[0].pos.xyz + 1) / 2.0f, 0);
     float4 color = float4(density, 0.1f, 0.1f, 1.0f);
     
-	// Calculate the position of the vertex against the world, view, and projection matrices.
+    //Triangle Begin
     element.position = position;
     element.position.x -= offset / 2.0f;
     element.position.y -= offset / 2.0f;
     element.color = color;
 	output.Append(element);
 
-	// Calculate the position of the vertex against the world, view, and projection matrices.
     element.position = position;
     element.position.y += offset / 2.0f;
     element.color = color;
     output.Append(element);
 
-    // Calculate the position of the vertex against the world, view, and projection matrices.
     element.position = position;
     element.position.x += offset / 2.0f;
     element.position.y -= offset / 2.0f;
     element.color = color;
     output.Append(element);
+    //Triangle End
 
     output.RestartStrip();
 	
