@@ -15,7 +15,7 @@ public:
 		};
 	};
 
-	GeometryData(unsigned int width, unsigned int height, unsigned int depth, TerrainType::Enum type, ID3D11Device* device);
+	GeometryData(unsigned int width, unsigned int height, unsigned int depth, TerrainType::Enum type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	~GeometryData();
 
 	void DebugPrint();
@@ -31,6 +31,12 @@ private:
 		DirectX::XMFLOAT4 color;
 	};
 
+	struct DecalDescription
+	{
+		DirectX::XMFLOAT4 decal[8];
+		DirectX::XMFLOAT4 dataStep;
+	};
+
 	void GenerateCubeData();
 
 	int GetVertices(VertexInputType** outVertices);
@@ -38,15 +44,20 @@ private:
 	D3D11_TEXTURE3D_DESC CreateTextureDesc() const;
 	D3D11_SUBRESOURCE_DATA CreateSubresourceData() const;
 	ID3D11Texture3D* CreateTexture(ID3D11Device* device, D3D11_TEXTURE3D_DESC texDesc, D3D11_SUBRESOURCE_DATA subData) const;
-	ID3D11ShaderResourceView* CreateShaderResourceView(ID3D11Device* device, ID3D11Texture3D* texture3D) const;
+	ID3D11ShaderResourceView* CreateDensityShaderResource(ID3D11Device* device, ID3D11Texture3D* texture3D) const;
+	ID3D11ShaderResourceView* CreateTriangleLUTShaderResource(ID3D11Device* device) const;
 	ID3D11SamplerState* CreateSamplerState(ID3D11Device* device) const;
+	void GenerateDecalDescriptionBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+	DecalDescription GetDecals() const;
 
 	D3D11_TEXTURE3D_DESC m_texDesc;
 	D3D11_SUBRESOURCE_DATA m_subData;
 	ID3D11Texture3D* m_texture3D;
-	ID3D11ShaderResourceView* m_densityMap; 
+	ID3D11ShaderResourceView* m_densityMap;
+	ID3D11ShaderResourceView* m_triangleLUT;
 	ID3D11SamplerState* m_sampler;
-	ID3D11Buffer *m_vertexBuffer;
+	ID3D11Buffer *m_vertexBuffer = nullptr;;
+	ID3D11Buffer* m_decalDescriptionBuffer = nullptr;
 
 	float* m_data;
 	unsigned int m_width, m_height, m_depth;

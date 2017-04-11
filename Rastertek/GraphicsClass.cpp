@@ -96,8 +96,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	light->SetLookAt(0.0f, 0.0f, 20.0f);
 	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
 
-	terrain = new GeometryData(32, 32, 32, GeometryData::TerrainType::CUBE, direct3D->GetDevice());
-	terrain->DebugPrint();
+	terrain = new GeometryData(32, 32, 32, GeometryData::TerrainType::CUBE, direct3D->GetDevice(), direct3D->GetDeviceContext());
+	//terrain->DebugPrint();
 	terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(2.0f, 2.0f, 2.0f);
 
 	//HARDCODED END
@@ -434,25 +434,15 @@ bool GraphicsClass::SetScreenBuffer(float red, float green, float blue, float al
 
 bool GraphicsClass::Render(float rotation, InputClass* input)
 {
-
-	//HARDCODED
-
-	ModelClass testmodel;
-	testmodel.Initialize(direct3D->GetDevice());
-
-	//HARDCODED END
-
 	XMMATRIX viewMatrix, projectionMatrix, translateMatrix;
 	XMMATRIX lightViewMatrix, lightProjectionMatrix;
-	XMMATRIX lightViewMatrix2, lightProjectionMatrix2;
-	bool result;
 
 	//Render scene to texture
-	result = RenderSceneToTexture();
-	if (!result)
-	{
-		return false;
-	}
+	//result = RenderSceneToTexture();
+	//if (!result)
+	//{
+	//	return false;
+	//}
 
 	//clear Buffer at beginning
 	SetScreenBuffer(0.0f, 0.0f, 0.0f, 1.0f);
@@ -474,7 +464,6 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	light->GetProjectionMatrix(lightProjectionMatrix);
 	
 	//Render Geometry
-	//testmodel.Render(direct3D->GetDeviceContext());
 	terrain->Render(direct3D->GetDeviceContext());
 	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix);
 

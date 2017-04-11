@@ -11,15 +11,15 @@ struct VertexInputType
     float4 color : COLOR;
 };
 
-struct PixelInputType
+struct GSInputType
 {
-    float4 position : SV_Position;
+    float4 position : SV_POSITION;
     float4 color : COLOR;
 };
 
-PixelInputType main( VertexInputType input )
+GSInputType main(VertexInputType input)
 {
-	PixelInputType output;
+    GSInputType output;
 
 	// Change the position vector to be 4 units for proper matrix calculations.
     output.position = float4(input.position, 1.0f);

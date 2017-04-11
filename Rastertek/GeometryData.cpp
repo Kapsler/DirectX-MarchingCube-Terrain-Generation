@@ -1,7 +1,8 @@
 #include "GeometryData.h"
 #include <iostream>
+#include "TriangleLUT.h"
 
-GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, TerrainType::Enum type, ID3D11Device* device)
+GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, TerrainType::Enum type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 	: m_width(width), m_height(height), m_depth(depth)
 {
 
@@ -20,9 +21,11 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	m_texDesc = CreateTextureDesc();
 	m_subData = CreateSubresourceData();
 	m_texture3D = CreateTexture(device, m_texDesc, m_subData);
-	m_densityMap = CreateShaderResourceView(device, m_texture3D);
+	m_densityMap = CreateDensityShaderResource(device, m_texture3D);
+	m_triangleLUT = CreateTriangleLUTShaderResource(device);
 	m_sampler = CreateSamplerState(device);
 	InitializeBuffers(device);
+	GenerateDecalDescriptionBuffer(device, deviceContext);
 }
 
 GeometryData::~GeometryData()
@@ -187,11 +190,42 @@ ID3D11Texture3D* GeometryData::CreateTexture(ID3D11Device* device, const D3D11_T
 	return output;
 }
 
-ID3D11ShaderResourceView* GeometryData::CreateShaderResourceView(ID3D11Device* device, ID3D11Texture3D* texture3D) const
+ID3D11ShaderResourceView* GeometryData::CreateDensityShaderResource(ID3D11Device* device, ID3D11Texture3D* texture3D) const
 {
 	ID3D11ShaderResourceView* output;
 
 	device->CreateShaderResourceView(texture3D, nullptr, &output);
+
+	return output;
+}
+
+ID3D11ShaderResourceView* GeometryData::CreateTriangleLUTShaderResource(ID3D11Device* device) const 
+{
+	ID3D11ShaderResourceView* output;
+
+	D3D11_TEXTURE2D_DESC desc;
+	ZeroMemory(&desc, sizeof(desc));
+	desc.Height = 256;
+	desc.Width = 16;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_R32_SINT;
+	desc.SampleDesc = { 1, 0 };
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = 0;
+	desc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA initData;
+	ZeroMemory(&initData, sizeof(initData));
+	initData.SysMemPitch = 16 * sizeof(int);
+	initData.SysMemSlicePitch = 0;
+
+	initData.pSysMem = TriangleLUT::TriTable;
+
+	ID3D11Texture2D* texture = nullptr;
+	device->CreateTexture2D(&desc, &initData, &texture);
+	device->CreateShaderResourceView(texture, nullptr, &output);
 
 	return output;
 }
@@ -208,8 +242,6 @@ ID3D11SamplerState* GeometryData::CreateSamplerState(ID3D11Device* device) const
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	//sampDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
-	//sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = 0;
@@ -217,6 +249,41 @@ ID3D11SamplerState* GeometryData::CreateSamplerState(ID3D11Device* device) const
 	device->CreateSamplerState(&sampDesc, &output);
 
 	return output;
+}
+
+void GeometryData::GenerateDecalDescriptionBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+{
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(DecalDescription);
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.CPUAccessFlags = 0;
+	device->CreateBuffer(&bd, nullptr, &m_decalDescriptionBuffer);
+	//return S_OK;
+
+	DecalDescription dbuffer;
+	dbuffer = GetDecals();
+	deviceContext->UpdateSubresource(m_decalDescriptionBuffer, 0, nullptr, &dbuffer, 0, 0);
+}
+
+GeometryData::DecalDescription GeometryData::GetDecals() const
+{
+	DecalDescription buffer;
+
+	ZeroMemory(&buffer, sizeof(buffer));
+	buffer.decal[0] = DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 1);
+	buffer.decal[1] = DirectX::XMFLOAT4(m_cubeStep.x, 0.0f, 0.0f, 1);
+	buffer.decal[2] = DirectX::XMFLOAT4(m_cubeStep.x, m_cubeStep.y, 0.0f, 1);
+	buffer.decal[3] = DirectX::XMFLOAT4(0.0f, m_cubeStep.y, 0.0f, 1);
+	buffer.decal[4] = DirectX::XMFLOAT4(0.0f, 0.0f, m_cubeStep.z, 1);
+	buffer.decal[5] = DirectX::XMFLOAT4(m_cubeStep.x, 0.0f, m_cubeStep.z, 1);
+	buffer.decal[6] = DirectX::XMFLOAT4(m_cubeStep.x, m_cubeStep.y, m_cubeStep.z, 1);
+	buffer.decal[7] = DirectX::XMFLOAT4(0.0f, m_cubeStep.y, m_cubeStep.z, 1);
+
+	buffer.dataStep = DirectX::XMFLOAT4(1.0f / static_cast<float>(m_width), 1.0f / static_cast<float>(m_height), 1.0f / static_cast<float>(m_depth), 1);
+
+	return buffer;
 }
 
 void GeometryData::DebugPrint()
@@ -265,8 +332,10 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext)
 
 	//Density Map to use
 	deviceContext->GSSetShaderResources(0, 1, &m_densityMap);
+	deviceContext->GSSetShaderResources(1, 1, &m_triangleLUT);
 	//Set point sampler to use in the geometry shader
 	deviceContext->GSSetSamplers(0, 1, &m_sampler);
+	deviceContext->GSSetConstantBuffers(1, 1, &m_decalDescriptionBuffer);
 }
 
 unsigned GeometryData::GetVertexCount()

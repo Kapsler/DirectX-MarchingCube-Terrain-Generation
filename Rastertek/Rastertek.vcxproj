@@ -195,6 +195,7 @@
     <ClInclude Include="TextureClass.h" />
     <ClInclude Include="TimerClass.h" />
     <ClInclude Include="tiny_obj_loader.h" />
+    <ClInclude Include="TriangleLUT.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DepthPixelShader.hlsl">
