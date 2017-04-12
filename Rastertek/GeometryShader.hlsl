@@ -8,6 +8,7 @@ struct GSOuput
 {
 	float4 position : SV_POSITION;
 	float4 color : COLOR0;
+    float4 normal : NORMAL;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -48,6 +49,20 @@ float3 vertexInterpolation(float isoLevel, float3 v0, float l0, float3 v1, float
     return lerp(v0, v1, lerper);
 }
 
+float4 calculateNormal(float3 p1, float3 p2, float3 p3)
+{
+    float4 normal;
+
+    float3 u = p2 - p1;
+    float3 v = p3 - p1;
+
+    normal.x = (u.y * v.z) - (u.z * v.y);
+    normal.y = (u.z * v.x) - (u.x * v.z);
+    normal.z = (u.x * v.y) - (u.y * v.x);
+    normal.w = 1.0f;
+
+    return normal;
+}
 
 /*
 Gets a value from the look-up table
@@ -129,6 +144,11 @@ void main(
             v2.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 2)], 1);
             v2.position = getProjectionPosition(v2.position);
             v2.color = color;
+
+            float4 normal = calculateNormal(v0.position.xyz, v1.position.xyz, v2.position.xyz);
+            v0.normal = normal;
+            v1.normal = normal;
+            v2.normal = normal;
 
             output.Append(v0);
             output.Append(v1);
