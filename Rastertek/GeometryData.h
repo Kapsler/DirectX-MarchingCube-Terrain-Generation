@@ -18,7 +18,7 @@ public:
 			BUMPY_SPHERE,
 			PILLAR,
 			NOISE,
-			BUMPY_PILLAR
+			HELIX
 		};
 	};
 
@@ -51,7 +51,7 @@ private:
 	void GeneratePillarData();
 	void GenerateNoiseData();
 	void GenerateBumpySphere();
-	void GenerateBumpyPillar();
+	void GenerateHelixStructure();
 
 	int GetVertices(VertexInputType** outVertices);
 	void InitializeBuffers(ID3D11Device*);

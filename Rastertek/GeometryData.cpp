@@ -5,7 +5,7 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	: m_width(width), m_height(height), m_depth(depth)
 {
 
-	m_cubeSize = DirectX::XMFLOAT3(32.0f, 32.0f, 32.0f);
+	m_cubeSize = DirectX::XMFLOAT3(64.0f, 64.0f, 64.0f);
 	//2.0f to decrease density
 	m_cubeStep = DirectX::XMFLOAT3(2.0f / m_cubeSize.x, 2.0f / m_cubeSize.y, 2.0f / m_cubeSize.z);
 	worldMatrix = DirectX::XMMatrixIdentity();
@@ -31,8 +31,8 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	case TerrainType::BUMPY_SPHERE:
 		GenerateBumpySphere();
 		break;
-	case TerrainType::BUMPY_PILLAR:
-		GenerateBumpyPillar();
+	case TerrainType::HELIX:
+		GenerateHelixStructure();
 		break;
 	}
 
@@ -172,29 +172,45 @@ void GeometryData::GeneratePillarData()
 
 	}
 }
-void GeometryData::GenerateBumpyPillar()
+void GeometryData::GenerateHelixStructure()
 {
 
 	size_t index = 0u;
-	float maxDistance = m_width / 10.0f;
+	float maxDistance = m_width / 7.5f;
 
 	for (UINT z = 0; z < m_depth; z++)
 	{
 		for (UINT y = 0; y < m_height; y++)
 		{
 			DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(m_width / 2.0f, static_cast<float>(y), m_depth / 2.0f);
-			DirectX::XMFLOAT3 pillar1 = DirectX::XMFLOAT3(center.x + 15 * (float)sin(y / 7.0f) , center.y, center.z + 15 * (float)cos(y / 7.0f));
+			DirectX::XMFLOAT3 pillar1 = DirectX::XMFLOAT3(center.x + 10.0f * (float)sin(y / 7.0f), center.y, center.z + 10.0f * (float)cos(y / 7.0f));
+			DirectX::XMFLOAT3 pillar2 = DirectX::XMFLOAT3(center.x + 10.0f * (float)sin(y / 7.0f + DirectX::XM_PI * 0.66f), center.y, center.z + 10.0f * (float)cos(y / 7.0f + DirectX::XM_PI * 0.66f));
+			DirectX::XMFLOAT3 pillar3 = DirectX::XMFLOAT3(center.x + 10.0f * (float)sin(y / 7.0f + DirectX::XM_PI * 0.66f * 2.0f) , center.y, center.z + 10.0f * (float)cos(y / 7.0f + DirectX::XM_PI * 0.66f * 2.0f));
 
 			for (UINT x = 0; x < m_width; x++)
 			{
-				float result = 1.0f - (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), pillar1.x, pillar1.y, pillar1.z) / maxDistance);
-				
+				float result = 0;
 
+				//Pilars
+				result += 1.0f / (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), pillar1.x, pillar1.y, pillar1.z) / maxDistance) - 1.0f;
+				result += 1.0f / (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), pillar2.x, pillar2.y, pillar2.z) / maxDistance) - 1.0f;
+				result += 1.0f / (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), pillar3.x, pillar3.y, pillar3.z) / maxDistance) - 1.0f;
+
+				//Water Flow Channel
+				result -= 1.0f / (getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), center.x, center.y, center.z) / maxDistance) - 1.0f;
+
+				//Teraces
+				result += 2.0f * (float)cos(y);
+
+				//Outer Bounds
+				result -= pow((getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), center.x, center.y, center.z) / maxDistance), 0.5f);
+
+				//Noise
 				float valueX = (float)x / (float)m_width * 3.0f;
 				float valueY = (float)y / (float)m_height * 3.0f;
 				float valueZ = (float)z / (float)m_depth * 3.0f;
 
-				result += (float)m_perlin.GetValue(valueX + m_noiseOffset, valueY + m_noiseOffset, valueZ + m_noiseOffset) / 3.0f;
+				result += (float)m_perlin.GetValue(valueX + m_noiseOffset, valueY + m_noiseOffset, valueZ + m_noiseOffset) / 0.8f;
 
 				m_data[index] = result;
 				index++;
