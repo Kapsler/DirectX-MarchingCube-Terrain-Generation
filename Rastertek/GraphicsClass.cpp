@@ -98,7 +98,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::BUMPY_PILLAR, direct3D->GetDevice(), direct3D->GetDeviceContext());
 	//terrain->DebugPrint();
-	terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(5.0f, 5.0f, 5.0f);
+	terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(5.0f, 15.0f, 5.0f);
+	//terrain->worldMatrix = terrain->worldMatrix * XMMatrixTranslation(-2.5f, -2.5f, -2.5f);
 
 	//HARDCODED END
 
