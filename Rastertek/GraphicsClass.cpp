@@ -96,11 +96,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	light->SetLookAt(0.0f, 0.0f, 20.0f);
 	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
 
-	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext());
-	//terrain->DebugPrint();
-	terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(10.0f, 10.0f, 10.0f);
-	//terrain->worldMatrix = terrain->worldMatrix * XMMatrixTranslation(-2.5f, -2.5f, -2.5f);
-
+	RegenrateTerrain();
 	//HARDCODED END
 
 	//Create RenderToTexture
@@ -239,6 +235,7 @@ bool GraphicsClass::Frame(InputClass* input)
 
 	CheckWireframe(input); 
 	CheckMSKeys(input);
+	CheckTerrainKey(input);
 
 	// Update the rotation variable each frame.
 	rotation += (float)XM_PI * 0.0001f;
@@ -446,7 +443,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	//}
 
 	//clear Buffer at beginning
-	SetScreenBuffer(0.0f, 0.0f, 0.0f, 1.0f);
+	SetScreenBuffer(0.5f, 0.5f, 0.5f, 1.0f);
 	//direct3D->BeginScene(0.2f, 0.5f, 0.5f, 0.0f);
 
 	//Generate view matrix based on camera
@@ -563,6 +560,25 @@ void GraphicsClass::CheckMSKeys(InputClass* input)
 	}
 }
 
+void GraphicsClass::CheckTerrainKey(InputClass* input)
+{
+	unsigned int tkey = 0x54;
+
+	if (!terrainKeyToggle)
+	{
+		if (input->IsKeyDown(tkey))
+		{
+			RegenrateTerrain();
+			terrainKeyToggle = true;
+		}
+	}
+
+	if (input->IsKeyUp(tkey))
+	{
+		terrainKeyToggle = false;
+	}
+}
+
 void GraphicsClass::SetLightDirection(InputClass* input)
 {
 	unsigned int onekey = 0x31;
@@ -630,4 +646,13 @@ void GraphicsClass::RenderText(int inttorender, Vector2 screenPos, bool centerOr
 	m_font->DrawString(m_spriteBatch.get(), output,
 		screenPos, Colors::White, 0.f, origin, 0.5f);
 
+}
+
+void GraphicsClass::RegenrateTerrain()
+{
+	delete terrain;
+
+	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext());
+	//terrain->DebugPrint();
+	terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(10.0f, 10.0f, 10.0f);
 }

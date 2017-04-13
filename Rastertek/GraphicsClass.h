@@ -44,10 +44,12 @@ private:
 	bool Render(float, InputClass*);
 	void CheckWireframe(InputClass*);
 	void CheckMSKeys(InputClass*);
+	void CheckTerrainKey(InputClass* input);
 	void SetLightDirection(InputClass*);
 	void ChangeFillmode(D3D11_FILL_MODE);
 	void RenderText(string texttorender, Vector2 screenPos, bool centerOrigin);
 	void RenderText(int inttorender, Vector2 screenPos, bool centerOrigin);
+	void RegenrateTerrain();
 
 	D3DClass* direct3D;
 	CameraClass* camera;
@@ -58,7 +60,7 @@ private:
 	RenderTextureClass* renderTexture;
 	DepthShaderClass* depthShader;
 
-	bool wireframeMode, wireframeKeyToggle, bumpinessKeyToggle, msmodetoggle;
+	bool wireframeMode, wireframeKeyToggle = false, bumpinessKeyToggle = false, msmodetoggle = false, terrainKeyToggle = false;
 	float bumpiness;
 	int currentScreenWidth, currentScreenHeight;
 	float fps;
@@ -76,5 +78,5 @@ private:
 	BasicEffect* basicEffect;
 	ID3D11InputLayout* inputLayout;
 	
-	GeometryData* terrain;
+	GeometryData* terrain = nullptr;
 };

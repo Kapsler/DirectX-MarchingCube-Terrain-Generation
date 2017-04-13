@@ -66,6 +66,12 @@ GeometryData::~GeometryData()
 		m_texture3D = nullptr;
 	}
 
+	if(m_sampler)
+	{
+		m_sampler->Release();
+		m_sampler = nullptr;
+	}
+
 	delete m_data;
 }
 
