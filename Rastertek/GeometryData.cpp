@@ -203,14 +203,14 @@ void GeometryData::GenerateHelixStructure()
 				result += 2.0f * (float)cos(y);
 
 				//Outer Bounds
-				result -= pow((getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), center.x, center.y, center.z) / maxDistance), 0.5f);
+				result -= pow((getDistance(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), center.x, center.y, center.z) / maxDistance), 3.0f);
 
 				//Noise
 				float valueX = (float)x / (float)m_width * 3.0f;
 				float valueY = (float)y / (float)m_height * 3.0f;
 				float valueZ = (float)z / (float)m_depth * 3.0f;
 
-				result += (float)m_perlin.GetValue(valueX + m_noiseOffset, valueY + m_noiseOffset, valueZ + m_noiseOffset) / 0.8f;
+				result += (float)m_perlin.GetValue(valueX + m_noiseOffset, valueY + m_noiseOffset, valueZ + m_noiseOffset) * 5.0f;
 
 				m_data[index] = result;
 				index++;

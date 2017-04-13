@@ -7,5 +7,6 @@ struct PixelInputType
 
 float4 main(PixelInputType input) : SV_TARGET
 {
-	return input.normal;
+
+    return input.normal;
 }

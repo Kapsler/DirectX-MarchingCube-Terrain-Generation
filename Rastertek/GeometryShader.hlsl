@@ -35,9 +35,14 @@ Texture2D<int> tritableTex : register(t1);
 /*
 Multiplies the position by the world, view and projection matrix
 */
-float4 getProjectionPosition(float4 position)
+float4 getWorldPos(float4 position)
 {
     position = mul(position, worldMatrix);
+    return position;
+}
+
+float4 getProjectionPosition(float4 position)
+{
     position = mul(position, viewMatrix);
     position = mul(position, projectionMatrix);
     return position;
@@ -132,24 +137,31 @@ void main(
 
         for (int i = 0; checkTriangleLUT(cubeindex, i) != -1; i += 3)
         {
-			//Add vertices to the output stream
-            v0.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 0)], 1);
-            v0.position = getProjectionPosition(v0.position);
+            //Set Color
             v0.color = color;
-			
-            v1.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 1)], 1);
-            v1.position = getProjectionPosition(v1.position);
             v1.color = color;
-				
-            v2.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 2)], 1);
-            v2.position = getProjectionPosition(v2.position);
             v2.color = color;
 
+            //Get World Pos
+            v0.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 0)], 1);
+            v1.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 1)], 1);
+            v2.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 2)], 1);
+            v0.position = getWorldPos(v0.position);
+            v1.position = getWorldPos(v1.position);
+            v2.position = getWorldPos(v2.position);
+
+            //Calculate Normals
             float4 normal = calculateNormal(v0.position.xyz, v1.position.xyz, v2.position.xyz);
             v0.normal = normal;
             v1.normal = normal;
             v2.normal = normal;
 
+            //Get Final Pos
+            v0.position = getProjectionPosition(v0.position);
+            v1.position = getProjectionPosition(v1.position);
+            v2.position = getProjectionPosition(v2.position);
+    
+            //Output Vertices
             output.Append(v0);
             output.Append(v1);
             output.Append(v2);
