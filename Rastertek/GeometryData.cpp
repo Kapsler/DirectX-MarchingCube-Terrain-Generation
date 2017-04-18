@@ -184,6 +184,7 @@ void GeometryData::GenerateHelixStructure()
 	size_t index = 0u;
 	float maxDistance = m_width / 7.5f;
 
+
 	for (UINT z = 0; z < m_depth; z++)
 	{
 		for (UINT y = 0; y < m_height; y++)

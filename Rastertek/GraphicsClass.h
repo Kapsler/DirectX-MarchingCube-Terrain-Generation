@@ -45,6 +45,7 @@ private:
 	void CheckWireframe(InputClass*);
 	void CheckMSKeys(InputClass*);
 	void CheckTerrainKey(InputClass* input);
+	void CheckRotationKey(InputClass* input);
 	void SetLightDirection(InputClass*);
 	void ChangeFillmode(D3D11_FILL_MODE);
 	void RenderText(string texttorender, Vector2 screenPos, bool centerOrigin);
@@ -61,6 +62,8 @@ private:
 	DepthShaderClass* depthShader;
 
 	bool wireframeMode, wireframeKeyToggle = false, bumpinessKeyToggle = false, msmodetoggle = false, terrainKeyToggle = false;
+	bool rotationKeyToggle = false;
+	bool rotate = false;
 	float bumpiness;
 	int currentScreenWidth, currentScreenHeight;
 	float fps;

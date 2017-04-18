@@ -236,9 +236,10 @@ bool GraphicsClass::Frame(InputClass* input)
 	CheckWireframe(input); 
 	CheckMSKeys(input);
 	CheckTerrainKey(input);
+	CheckRotationKey(input);
 
 	// Update the rotation variable each frame.
-	rotation += (float)XM_PI * 0.0001f;
+	rotation += static_cast<float>(XM_PI) * 0.0001f;
 	if (rotation > 360.0f)
 	{
 		rotation -= 360.0f;
@@ -463,7 +464,10 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	
 	//Render Geometry
 	terrain->Render(direct3D->GetDeviceContext());
-	//terrain->worldMatrix = terrain->worldMatrix * XMMatrixRotationY(0.01f);
+	if(rotate)
+	{
+		terrain->worldMatrix = terrain->worldMatrix * XMMatrixRotationY(0.01f);
+	}
 	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix);
 
 	//Text
@@ -576,6 +580,25 @@ void GraphicsClass::CheckTerrainKey(InputClass* input)
 	if (input->IsKeyUp(tkey))
 	{
 		terrainKeyToggle = false;
+	}
+}
+
+void GraphicsClass::CheckRotationKey(InputClass* input)
+{
+	unsigned int rkey = 0x52;
+
+	if (!rotationKeyToggle)
+	{
+		if (input->IsKeyDown(rkey))
+		{
+			rotate = !rotate;
+			rotationKeyToggle = true;
+		}
+	}
+
+	if (input->IsKeyUp(rkey))
+	{
+		rotationKeyToggle = false;
 	}
 }
 

@@ -88,8 +88,7 @@ void main(
 	inout TriangleStream<GSOuput> output
 )
 {
-    float offset = 0.02f;
-    float isolevel = 0.50f;
+    float isolevel = 0.00f;
 
     float4 position = input[0].position;
     float4 color = input[0].color;
@@ -167,37 +166,6 @@ void main(
             output.Append(v2);
             output.RestartStrip();
         }
-    }
-
-    ////DEBUGOUTPUT - BEGIN
-    //GSOuput v0, v1, v2;
-    //float4 pos = getProjectionPosition(input[0].position);
-    //float offset = 0.05f;
-    //float density = densityTex.SampleLevel(samplerPoint, input[0].position.xyz, 0);
-    //float4 color = float4(density, 0.1f, 0.1f, 1.0f);
-    
-    //if (density > isolevel)
-    //{
-    //    v0.position = pos;
-    //    v0.position.x -= offset;
-    //    v0.position.y -= offset;
-    //    v0.color = color;
-    
-    //    v1.position = pos;
-    //    v1.position.y += offset;
-    //    v1.color = color;
-    
-    //    v2.position = pos;
-    //    v2.position.x += offset;
-    //    v2.position.y -= offset;
-    //    v2.color = color;
-
-    //    output.Append(v0);
-    //    output.Append(v1);
-    //    output.Append(v2);
-    //    output.RestartStrip();
-    //}
-    ////DEBUGOUTPUT - END
-   
+    }   
 
 }
