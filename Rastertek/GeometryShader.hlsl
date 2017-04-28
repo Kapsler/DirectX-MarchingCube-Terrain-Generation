@@ -6,7 +6,8 @@ struct GSInput
 
 struct GSOuput
 {
-	float4 position : SV_POSITION;
+    float4 position : SV_POSITION;
+    float4 worldPos : POSITION;
 	float4 color : COLOR0;
     float4 normal : NORMAL;
 };
@@ -150,6 +151,9 @@ void main(
             v0.position = getWorldPos(v0.position);
             v1.position = getWorldPos(v1.position);
             v2.position = getWorldPos(v2.position);
+            v0.worldPos = v0.position;
+            v1.worldPos = v1.position;
+            v2.worldPos = v2.position;
             
             //Calculate Normals
             v0.normal.xyz = calculateNormal(v0.position.xyz);

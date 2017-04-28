@@ -68,10 +68,22 @@ GeometryData::~GeometryData()
 		m_texture3D = nullptr;
 	}
 
-	if(m_densitySampler)
+	if (m_densitySampler)
 	{
 		m_densitySampler->Release();
 		m_densitySampler = nullptr;
+	}
+
+	if (m_clampSampler)
+	{
+		m_clampSampler->Release();
+		m_clampSampler = nullptr;
+	}
+
+	if (m_wrapSampler)
+	{
+		m_wrapSampler->Release();
+		m_wrapSampler = nullptr;
 	}
 
 	for(size_t i = 0u; i < 3; ++i)
@@ -241,12 +253,18 @@ void GeometryData::GenerateHelixStructure()
 void GeometryData::LoadTextures(ID3D11Device* device)
 {
 
-	TextureClass* brick = new TextureClass();
-	brick->Initialize(device, L"./Assets/brickwall.dds", L"./Assets/brickwallnormal.dds");
+	TextureClass* grass = new TextureClass();
+	grass->Initialize(device, L"./Assets/grass.dds", L"./Assets/groundnormal.dds");
 
-	m_colorTextures[0] = brick;
-	m_colorTextures[1] = brick;
-	m_colorTextures[2] = brick;
+	TextureClass* rock = new TextureClass();
+	rock->Initialize(device, L"./Assets/rock.dds", L"./Assets/groundnormal.dds");
+
+	TextureClass* stone = new TextureClass();
+	stone->Initialize(device, L"./Assets/stone.dds", L"./Assets/groundnormal.dds");
+
+	m_colorTextures[0] = rock;
+	m_colorTextures[1] = grass;
+	m_colorTextures[2] = stone;
 }
 
 void GeometryData::GenerateNoiseData()
@@ -478,9 +496,9 @@ void GeometryData::CreatePSSamplerStates(ID3D11Device* device, ID3D11SamplerStat
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.MipLODBias = 0.0f;
 	sampDesc.MaxAnisotropy = 16;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.BorderColor[0] = 0;
-	sampDesc.BorderColor[1] = 0;
+	sampDesc.BorderColor[1] = 1;
 	sampDesc.BorderColor[2] = 0;
 	sampDesc.BorderColor[3] = 0;
 	sampDesc.MinLOD = 0;
@@ -584,8 +602,8 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext)
 	deviceContext->GSSetConstantBuffers(1, 1, &m_decalDescriptionBuffer);
 
 	deviceContext->PSSetShaderResources(0, 2, m_colorTextures[0]->GetTextureViewArray());
-	deviceContext->PSSetShaderResources(1, 2, m_colorTextures[1]->GetTextureViewArray());
-	deviceContext->PSSetShaderResources(2, 2, m_colorTextures[2]->GetTextureViewArray());
+	deviceContext->PSSetShaderResources(2, 2, m_colorTextures[1]->GetTextureViewArray());
+	deviceContext->PSSetShaderResources(4, 2, m_colorTextures[2]->GetTextureViewArray());
 
 	deviceContext->PSSetSamplers(0, 1, &m_wrapSampler);
 	deviceContext->PSSetSamplers(0, 1, &m_clampSampler);
