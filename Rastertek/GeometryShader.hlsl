@@ -21,15 +21,6 @@ cbuffer MatrixBuffer : register(b0)
 };
 
 
-//cbuffer Eye : register(b2)
-//{
-//    float3 eyePos;
-//    float padding1;
-//    float3 eyeLook;
-//    float padding2;
-//    float3 eyeUp;
-//    float padding3;
-//};
 
 cbuffer DecalDescription : register(b1)
 {
@@ -178,10 +169,6 @@ void main(
             v0.position = getProjectionPosition(v0.position);
             v1.position = getProjectionPosition(v1.position);
             v2.position = getProjectionPosition(v2.position);
-
-            //v0.viewDir = normalize(eyePos - v0.worldPos.xyz);
-            //v1.viewDir = normalize(eyePos - v1.worldPos.xyz);
-            //v2.viewDir = normalize(eyePos - v2.worldPos.xyz);
 
             //Output Vertices
             output.Append(v0);

@@ -371,8 +371,8 @@ bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX wor
 	//Set constant buffer
 	context->VSSetConstantBuffers(0, 1, &matrixBuffer);
 	context->GSSetConstantBuffers(0, 1, &matrixBuffer);
-	//context->GSSetConstantBuffers(2, 1, &eyeBuffer);
 	context->PSSetConstantBuffers(0, 1, &matrixBuffer);
+	context->PSSetConstantBuffers(2, 1, &eyeBuffer);
 
 	return true;
 }
