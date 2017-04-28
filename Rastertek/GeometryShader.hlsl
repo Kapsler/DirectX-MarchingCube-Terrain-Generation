@@ -10,6 +10,7 @@ struct GSOuput
     float4 worldPos : POSITION;
 	float4 color : COLOR0;
     float4 normal : NORMAL;
+   // float3 viewDir : TEXCOORD;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -19,6 +20,16 @@ cbuffer MatrixBuffer : register(b0)
     matrix projectionMatrix;
 };
 
+
+//cbuffer Eye : register(b2)
+//{
+//    float3 eyePos;
+//    float padding1;
+//    float3 eyeLook;
+//    float padding2;
+//    float3 eyeUp;
+//    float padding3;
+//};
 
 cbuffer DecalDescription : register(b1)
 {
@@ -168,7 +179,10 @@ void main(
             v1.position = getProjectionPosition(v1.position);
             v2.position = getProjectionPosition(v2.position);
 
-    
+            //v0.viewDir = normalize(eyePos - v0.worldPos.xyz);
+            //v1.viewDir = normalize(eyePos - v1.worldPos.xyz);
+            //v2.viewDir = normalize(eyePos - v2.worldPos.xyz);
+
             //Output Vertices
             output.Append(v0);
             output.Append(v1);

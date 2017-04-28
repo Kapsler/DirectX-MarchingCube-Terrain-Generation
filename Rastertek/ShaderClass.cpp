@@ -39,11 +39,11 @@ void ShaderClass::Shutdown()
 }
 
 bool ShaderClass::Render(ID3D11DeviceContext* context, int indexCount, int instanceCount,
-	XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX	projectionMatrix)
+	XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX	projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp)
 {
 	bool result;
 
-	result = SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix);
+	result = SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp);
 	if(!result)
 	{
 		return false;
@@ -54,11 +54,11 @@ bool ShaderClass::Render(ID3D11DeviceContext* context, int indexCount, int insta
 	return true;
 }
 
-bool ShaderClass::Render(ID3D11DeviceContext* context, int vertexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
+bool ShaderClass::Render(ID3D11DeviceContext* context, int vertexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp)
 {
 	bool result;
 
-	result = SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix);
+	result = SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp);
 	if (!result)
 	{
 		return false;
@@ -78,12 +78,12 @@ bool ShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* verte
 	ID3DBlob* pixelShaderBuffer;
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 	unsigned int numElements;
-	D3D11_BUFFER_DESC matrixBufferDesc;
+	D3D11_BUFFER_DESC matrixBufferDesc, eyeBufferDesc;
 	D3D11_SAMPLER_DESC samplerDesc;
 	DWORD shaderflags = 
 		D3DCOMPILE_ENABLE_STRICTNESS 
 	| D3DCOMPILE_DEBUG 
-	//| D3DCOMPILE_SKIP_OPTIMIZATION
+	| D3DCOMPILE_SKIP_OPTIMIZATION
 	;
 
 	errorMessage = nullptr;
@@ -238,6 +238,21 @@ bool ShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* verte
 		return false;
 	}
 
+	//Setup Eye Buffer Description
+	eyeBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	eyeBufferDesc.ByteWidth = sizeof(EyeBufferType);
+	eyeBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	eyeBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	eyeBufferDesc.MiscFlags = 0;
+	eyeBufferDesc.StructureByteStride = 0;
+
+	//Make Buffer accessible
+	result = device->CreateBuffer(&eyeBufferDesc, nullptr, &eyeBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -305,12 +320,12 @@ void ShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, 
 
 }
 
-bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
+bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr;
-	unsigned int bufferNumber;
+	MatrixBufferType* matrixData;
+	EyeBufferType* eyeData;
 
 	//DirectX11 need matrices transposed!
 	worldMatrix = XMMatrixTranspose(worldMatrix);
@@ -326,19 +341,38 @@ bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX wor
 	}
 
 	//Get pointer to data
-	dataPtr = static_cast<MatrixBufferType*>(mappedResource.pData);
+	matrixData = static_cast<MatrixBufferType*>(mappedResource.pData);
 	
 	//Set data
-	dataPtr->world = worldMatrix;
-	dataPtr->view = viewMatrix;
-	dataPtr->projection = projectionMatrix;
+	matrixData->world = worldMatrix;
+	matrixData->view = viewMatrix;
+	matrixData->projection = projectionMatrix;
 
 	context->Unmap(matrixBuffer, 0);
-	bufferNumber = 0;
+
+	// ### EyeBuffer ###
+	//Lock Buffer
+	result = context->Map(eyeBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	//Get pointer to data
+	eyeData = static_cast<EyeBufferType*>(mappedResource.pData);
+
+	//Set data
+	eyeData->position = eyePos;
+	eyeData->forward = eyeDir;
+	eyeData->up = eyeUp;
+
+	context->Unmap(eyeBuffer, 0);
 
 	//Set constant buffer
-	context->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
-	context->GSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+	context->VSSetConstantBuffers(0, 1, &matrixBuffer);
+	context->GSSetConstantBuffers(0, 1, &matrixBuffer);
+	//context->GSSetConstantBuffers(2, 1, &eyeBuffer);
+	context->PSSetConstantBuffers(0, 1, &matrixBuffer);
 
 	return true;
 }

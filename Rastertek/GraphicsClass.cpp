@@ -468,7 +468,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	{
 		terrain->worldMatrix = terrain->worldMatrix * XMMatrixRotationY(0.01f);
 	}
-	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix);
+	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp());
 
 	//Text
 	ID3D11DepthStencilState* depthstate;
