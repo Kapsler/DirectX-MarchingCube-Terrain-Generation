@@ -70,6 +70,16 @@ XMFLOAT3 CameraClass::GetPosition()
 	return XMFLOAT3(position);
 }
 
+XMFLOAT3 CameraClass::GetForward()
+{
+	return XMFLOAT3(viewMatrix.Forward());
+}
+
+XMFLOAT3 CameraClass::GetUp()
+{
+	return XMFLOAT3(viewMatrix.Up());
+}
+
 XMFLOAT3 CameraClass::GetRotation()
 {
 	return XMFLOAT3(rotation);
@@ -144,7 +154,6 @@ void CameraClass::Render()
 	roll = rotation.z * 0.0174532925f;
 
 	viewQuaternion = Quaternion::CreateFromYawPitchRoll(yaw, pitch, roll);
-
 
 	//Finally create view matrix
 	//viewMatrix = XMMatrixLookAtLH(positionVector, lookAtVector, upVector);

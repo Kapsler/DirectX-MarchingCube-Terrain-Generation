@@ -253,18 +253,18 @@ void GeometryData::GenerateHelixStructure()
 void GeometryData::LoadTextures(ID3D11Device* device)
 {
 
-	TextureClass* grass = new TextureClass();
-	grass->Initialize(device, L"./Assets/grass.dds", L"./Assets/groundnormal.dds");
+	TextureClass* rock1 = new TextureClass();
+	rock1->Initialize(device, L"./Assets/rock1.dds", L"./Assets/rock1_heightmap.dds");
 
-	TextureClass* rock = new TextureClass();
-	rock->Initialize(device, L"./Assets/rock.dds", L"./Assets/groundnormal.dds");
+	TextureClass* rock2 = new TextureClass();
+	rock2->Initialize(device, L"./Assets/rock2.dds", L"./Assets/rock2_heightmap.dds");
 
-	TextureClass* stone = new TextureClass();
-	stone->Initialize(device, L"./Assets/stone.dds", L"./Assets/groundnormal.dds");
+	TextureClass* rock3 = new TextureClass();
+	rock3->Initialize(device, L"./Assets/rock3.dds", L"./Assets/rock3_heightmap.dds");
 
-	m_colorTextures[0] = rock;
-	m_colorTextures[1] = grass;
-	m_colorTextures[2] = stone;
+	m_colorTextures[0] = rock1;
+	m_colorTextures[1] = rock2;
+	m_colorTextures[2] = rock3;
 }
 
 void GeometryData::GenerateNoiseData()
@@ -496,11 +496,11 @@ void GeometryData::CreatePSSamplerStates(ID3D11Device* device, ID3D11SamplerStat
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.MipLODBias = 0.0f;
 	sampDesc.MaxAnisotropy = 16;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 	sampDesc.BorderColor[0] = 0;
 	sampDesc.BorderColor[1] = 1;
 	sampDesc.BorderColor[2] = 0;
-	sampDesc.BorderColor[3] = 0;
+	sampDesc.BorderColor[3] = 1;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 

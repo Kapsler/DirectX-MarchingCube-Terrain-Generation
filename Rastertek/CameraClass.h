@@ -28,6 +28,8 @@ public:
 	void Shutdown();
 
 	XMFLOAT3 GetPosition();
+	XMFLOAT3 GetForward();
+	XMFLOAT3 GetUp();
 	XMFLOAT3 GetRotation();
 
 	void DoMovement(InputClass*);
