@@ -41,7 +41,9 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	m_texture3D = CreateTexture(device, m_texDesc, m_subData);
 	m_densityMap = CreateDensityShaderResource(device, m_texture3D);
 	m_triangleLUT = CreateTriangleLUTShaderResource(device);
-	m_sampler = CreateSamplerState(device);
+	m_densitySampler = CreateDensitySamplerState(device);
+	LoadTextures(device);
+	CreatePSSamplerStates(device, m_wrapSampler, m_clampSampler);
 	InitializeBuffers(device);
 	GenerateDecalDescriptionBuffer(device, deviceContext);
 }
@@ -66,10 +68,19 @@ GeometryData::~GeometryData()
 		m_texture3D = nullptr;
 	}
 
-	if(m_sampler)
+	if(m_densitySampler)
 	{
-		m_sampler->Release();
-		m_sampler = nullptr;
+		m_densitySampler->Release();
+		m_densitySampler = nullptr;
+	}
+
+	for(size_t i = 0u; i < 3; ++i)
+	{
+		if(m_colorTextures[i] != nullptr)
+		{
+			m_colorTextures[i]->Shutdown();
+		}
+		m_colorTextures[i] = nullptr;
 	}
 
 	delete m_data;
@@ -225,6 +236,17 @@ void GeometryData::GenerateHelixStructure()
 		}
 
 	}
+}
+
+void GeometryData::LoadTextures(ID3D11Device* device)
+{
+
+	TextureClass* brick = new TextureClass();
+	brick->Initialize(device, L"./Assets/brickwall.dds", L"./Assets/brickwallnormal.dds");
+
+	m_colorTextures[0] = brick;
+	m_colorTextures[1] = brick;
+	m_colorTextures[2] = brick;
 }
 
 void GeometryData::GenerateNoiseData()
@@ -423,7 +445,7 @@ ID3D11ShaderResourceView* GeometryData::CreateTriangleLUTShaderResource(ID3D11De
 	return output;
 }
 
-ID3D11SamplerState* GeometryData::CreateSamplerState(ID3D11Device* device) const
+ID3D11SamplerState* GeometryData::CreateDensitySamplerState(ID3D11Device* device) const
 {
 	ID3D11SamplerState* output;
 
@@ -442,6 +464,36 @@ ID3D11SamplerState* GeometryData::CreateSamplerState(ID3D11Device* device) const
 	device->CreateSamplerState(&sampDesc, &output);
 
 	return output;
+}
+
+void GeometryData::CreatePSSamplerStates(ID3D11Device* device, ID3D11SamplerState* wrapSampler, ID3D11SamplerState* clampSampler) const
+{
+	//Create a basic point sampler for sampling our density data in the gpu
+	//should refactor this elsewhere
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.MipLODBias = 0.0f;
+	sampDesc.MaxAnisotropy = 16;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	sampDesc.BorderColor[0] = 0;
+	sampDesc.BorderColor[1] = 0;
+	sampDesc.BorderColor[2] = 0;
+	sampDesc.BorderColor[3] = 0;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	device->CreateSamplerState(&sampDesc, &wrapSampler);
+
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+
+	device->CreateSamplerState(&sampDesc, &clampSampler);
+
 }
 
 void GeometryData::GenerateDecalDescriptionBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
@@ -528,8 +580,15 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext)
 	deviceContext->GSSetShaderResources(0, 1, &m_densityMap);
 	deviceContext->GSSetShaderResources(1, 1, &m_triangleLUT);
 	//Set point sampler to use in the geometry shader
-	deviceContext->GSSetSamplers(0, 1, &m_sampler);
+	deviceContext->GSSetSamplers(0, 1, &m_densitySampler);
 	deviceContext->GSSetConstantBuffers(1, 1, &m_decalDescriptionBuffer);
+
+	deviceContext->PSSetShaderResources(0, 2, m_colorTextures[0]->GetTextureViewArray());
+	deviceContext->PSSetShaderResources(1, 2, m_colorTextures[1]->GetTextureViewArray());
+	deviceContext->PSSetShaderResources(2, 2, m_colorTextures[2]->GetTextureViewArray());
+
+	deviceContext->PSSetSamplers(0, 1, &m_wrapSampler);
+	deviceContext->PSSetSamplers(0, 1, &m_clampSampler);
 }
 
 unsigned GeometryData::GetVertexCount()
