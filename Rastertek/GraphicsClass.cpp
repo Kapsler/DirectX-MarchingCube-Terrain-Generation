@@ -677,5 +677,5 @@ void GraphicsClass::RegenrateTerrain()
 
 	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext());
 	//terrain->DebugPrint();
-	terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(10.0f, 10.0f, 10.0f);
+	//terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(10.0f, 10.0f, 10.0f);
 }

@@ -54,19 +54,19 @@ float3 vertexInterpolation(float isoLevel, float3 v0, float l0, float3 v1, float
     return lerp(v0, v1, lerper);
 }
 
-float4 calculateNormal(float3 p1, float3 p2, float3 p3)
+float3 calculateNormal(float3 p)
 {
-    float4 normal;
+    p = (p + 1.0f) / 2.0f;
 
-    float3 u = p2 - p1;
-    float3 v = p3 - p1;
+    float3 grad;
+    grad.x = densityTex.SampleLevel(samplerPoint, p + float3(dataStep.x, 0, 0), 0) -
+             densityTex.SampleLevel(samplerPoint, p - float3(dataStep.x, 0, 0), 0);
+    grad.y = densityTex.SampleLevel(samplerPoint, p + float3(0, dataStep.y, 0), 0) -
+             densityTex.SampleLevel(samplerPoint, p - float3(0, dataStep.y, 0), 0);
+    grad.z = densityTex.SampleLevel(samplerPoint, p + float3(0, 0, dataStep.z), 0) -
+             densityTex.SampleLevel(samplerPoint, p - float3(0, 0, dataStep.z), 0);
 
-    normal.x = (u.y * v.z) - (u.z * v.y);
-    normal.y = (u.z * v.x) - (u.x * v.z);
-    normal.z = (u.x * v.y) - (u.y * v.x);
-    normal.w = 1.0f;
-
-    return normal;
+    return -normalize(grad);
 }
 
 /*
@@ -141,24 +141,29 @@ void main(
             v1.color = color;
             v2.color = color;
 
-            //Get World Pos
+            //Get Case from LUT
             v0.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 0)], 1);
             v1.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 1)], 1);
             v2.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 2)], 1);
+            
+            //Get World Pos
             v0.position = getWorldPos(v0.position);
             v1.position = getWorldPos(v1.position);
             v2.position = getWorldPos(v2.position);
-
+            
             //Calculate Normals
-            float4 normal = calculateNormal(v0.position.xyz, v1.position.xyz, v2.position.xyz);
-            v0.normal = normal;
-            v1.normal = normal;
-            v2.normal = normal;
+            v0.normal.xyz = calculateNormal(v0.position.xyz);
+            v1.normal.xyz = calculateNormal(v1.position.xyz);
+            v2.normal.xyz = calculateNormal(v2.position.xyz);
+            v0.normal.w = 0.0f;
+            v1.normal.w = 0.0f;
+            v2.normal.w = 0.0f;
 
             //Get Final Pos
             v0.position = getProjectionPosition(v0.position);
             v1.position = getProjectionPosition(v1.position);
             v2.position = getProjectionPosition(v2.position);
+
     
             //Output Vertices
             output.Append(v0);
