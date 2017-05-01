@@ -11,8 +11,12 @@ struct PixelInputType
     float4 worldPos : POSITION;
     float4 color : COLOR0;
     float4 normal : NORMAL;
-    float3 tangent : TANGENT;
-    float3 binormal : BINORMAL;
+    float3 tangentX : TANGENT;
+    float3 tangentY : TANGENT;
+    float3 tangentZ : TANGENT;
+    float3 binormalX : BINORMAL;
+    float3 binormalY : BINORMAL;
+    float3 binormalZ : BINORMAL;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -36,12 +40,12 @@ cbuffer Eye : register(b2)
 float2 displacementMapping(float2 uv, Texture2D HeightMap, float2 viewDir)
 { 
     //Displacement
-    float steps = 16;
+    float steps = 50;
     float stepSize = 1.0f / steps;
-    float refinementSteps = 8;
+    float refinementSteps = 25;
     float refinementStepSize = 1.0f / refinementSteps;
 
-    float2 dUV = -viewDir.xy * 0.1f / steps; //~displm’t depth
+    float2 dUV = -viewDir.xy * 1.0f * stepSize; //~displm’t depth
     float2 newCoords = uv;
 
     float prev_hits = 0;
@@ -54,7 +58,7 @@ float2 displacementMapping(float2 uv, Texture2D HeightMap, float2 viewDir)
         searchHeight -= stepSize;
         newCoords += dUV;
        
-        float currentHeight = HeightMap.SampleLevel(SampleTypeWrap, newCoords, 0).x;
+        float currentHeight = HeightMap.SampleLevel(SampleTypeWrap, newCoords, 0).r / 2.0f +0.5f;
         float is_first_hit = saturate((currentHeight - searchHeight - prev_hits) * 4999999);
        
         hit_h += is_first_hit * searchHeight;
@@ -67,7 +71,7 @@ float2 displacementMapping(float2 uv, Texture2D HeightMap, float2 viewDir)
 
     searchHeight = hit_h + stepSize;
     float start = searchHeight;
-    dUV *= refinementSteps;
+    dUV *= refinementStepSize;
     prev_hits = 0.0f;
     hit_h = 0.0f;
 
@@ -77,7 +81,7 @@ float2 displacementMapping(float2 uv, Texture2D HeightMap, float2 viewDir)
         searchHeight -= stepSize * refinementStepSize;
         newCoords += dUV;
        
-        float currentHeight = HeightMap.SampleLevel(SampleTypeWrap, newCoords, 0).x;
+        float currentHeight = HeightMap.SampleLevel(SampleTypeWrap, newCoords, 0).x / 2.0f + 0.5f;
         float is_first_hit = saturate((currentHeight - searchHeight - prev_hits) * 4999999);
        
         hit_h += is_first_hit * searchHeight;
@@ -90,7 +94,7 @@ float2 displacementMapping(float2 uv, Texture2D HeightMap, float2 viewDir)
     //Displacement - End
 }
 
-void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float2 tsEyeVec, out float4 blended_color, out float3 blended_bump_vec)
+void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 viewDir, out float4 blended_color, out float3 blended_bump_vec)
 {
         // Determine the blend weights for the 3 planar projections.  
     // N_orig is the vertex-interpolated normal vector.  
@@ -104,20 +108,28 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float2 t
     float2 coord1 = input.worldPos.yz * tex_scale;
     float2 coord2 = input.worldPos.zx * tex_scale;
     float2 coord3 = input.worldPos.xy * tex_scale;
+    
+    float2 tsEyeVec;
 
         // This is where you would apply conditional displacement mapping.  
     if (blend_weights.x > 0)
     {
+        tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
+        tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
         coord1 = displacementMapping(coord1, triplanarTexX[1], tsEyeVec);
     }
 
     if (blend_weights.y > 0)
     {
+        tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
+        tsEyeVec.y = dot(viewDir.xyz, float3(1.0f, 0.0f, 0.0f));
         coord2 = displacementMapping(coord2, triplanarTexY[1], tsEyeVec);
     }
 
     if (blend_weights.z > 0)
     {
+        tsEyeVec.x = dot(viewDir.xyz, float3(1.0f, 0.0f, 0.0f));
+        tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
         coord3 = displacementMapping(coord3, triplanarTexZ[1], tsEyeVec);
     }
 
@@ -161,10 +173,6 @@ float4 main(PixelInputType input) : SV_TARGET
     //Get Viewing Direction
     float4 viewDir = float4(eyePos, 1.0f);
     viewDir = normalize(mul(viewDir, worldMatrix) - input.worldPos);
-
-    float2 tsEyeVec;
-    tsEyeVec.x = dot(viewDir.xyz, input.tangent.xyz);
-    tsEyeVec.y = dot(viewDir.xyz, input.binormal.xyz);
     
     // Now determine a color value and bump vector for each of the 3  
     // projections, blend them, and store blended results in these two  
@@ -172,23 +180,27 @@ float4 main(PixelInputType input) : SV_TARGET
     float4 blended_color; // .w hold spec value  
     float3 blended_bump_vec;
    
-    triPlanarTexturing(input, tex_scale, tsEyeVec, blended_color, blended_bump_vec);
+    triPlanarTexturing(input, tex_scale, viewDir, blended_color, blended_bump_vec);
     //{
-    //    float2 uv = input.worldPos.yz * tex_scale;
+    //    float2 uv = (input.worldPos.yz / 2.0f + 0.5f) * tex_scale;
+
+    //float2 tsEyeVec;
+    //tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
+    //tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
 
     //    uv = displacementMapping(uv, triplanarTexX[1], tsEyeVec);
 
     //    blended_color = triplanarTexX[0].Sample(SampleTypeWrap, uv);
     //    blended_bump_vec = triplanarTexX[1].Sample(SampleTypeWrap, uv).rgb;
-    //    blended_bump_vec = blended_bump_vec * 2.0f - 1.0f;
-    //    blended_bump_vec = normalize(blended_bump_vec);
-    //    blended_bump_vec.z *= -1.0f;
-    //    blended_bump_vec = mul(float4(blended_bump_vec, 0.0f), worldMatrix).xyz;
+    //    //blended_bump_vec = blended_bump_vec * 2.0f - 1.0f;
+    //    //blended_bump_vec = normalize(blended_bump_vec);
+    //    //blended_bump_vec.z *= -1.0f;
+    //    //blended_bump_vec = mul(float4(blended_bump_vec, 0.0f), worldMatrix).xyz;
     //}
 
     // Apply bump vector to vertex-interpolated normal vector.  
     float4 N_for_lighting;
-    N_for_lighting.xyz = normalize(input.normal.xyz + blended_bump_vec * 2.0f);
+    N_for_lighting.xyz = normalize(input.normal.xyz + blended_bump_vec * 1.0f);
     N_for_lighting.w = 0.0f;
 
     //Diffuse Light

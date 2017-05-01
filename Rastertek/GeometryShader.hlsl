@@ -8,10 +8,14 @@ struct GSOuput
 {
     float4 position : SV_POSITION;
     float4 worldPos : POSITION;
-	float4 color : COLOR0;
+    float4 color : COLOR0;
     float4 normal : NORMAL;
-    float3 tangent : TANGENT;
-    float3 binormal : BINORMAL;
+    float3 tangentX : TANGENT0;
+    float3 tangentY : TANGENT1;
+    float3 tangentZ : TANGENT2;
+    float3 binormalX : BINORMAL0;
+    float3 binormalY : BINORMAL1;
+    float3 binormalZ : BINORMAL2;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -73,13 +77,39 @@ float3 calculateNormal(float3 p)
     return -normalize(grad);
 }
 
-void calculateTangent(float3 v0, float3 v1, float3 v2, out float3 tangent, out float3 binormal)
+void calculateTangentX(float3 v0, float3 v1, float3 v2, out float3 tangent, out float3 binormal)
 {
     float3 deltaPos1 = v1 - v0;
     float3 deltaPos2 = v2 - v0;
 
     float2 deltaUV1 = v1.yz - v0.yz;
     float2 deltaUV2 = v2.yz - v0.yz;
+
+    float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+    tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
+    binormal = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+}
+
+void calculateTangentY(float3 v0, float3 v1, float3 v2, out float3 tangent, out float3 binormal)
+{
+    float3 deltaPos1 = v1 - v0;
+    float3 deltaPos2 = v2 - v0;
+
+    float2 deltaUV1 = v1.zx - v0.zx;
+    float2 deltaUV2 = v2.zx - v0.zx;
+
+    float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+    tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
+    binormal = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+}
+
+void calculateTangentZ(float3 v0, float3 v1, float3 v2, out float3 tangent, out float3 binormal)
+{
+    float3 deltaPos1 = v1 - v0;
+    float3 deltaPos2 = v2 - v0;
+
+    float2 deltaUV1 = v1.xy - v0.xy;
+    float2 deltaUV2 = v2.xy - v0.xy;
 
     float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
     tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
@@ -179,15 +209,32 @@ void main(
             v1.normal.w = 0.0f;
             v2.normal.w = 0.0f;
 
+            //Tangents need uvcoords to be correct
             float3 tangent;
             float3 binormal;
-            calculateTangent(v0.position.xyz, v1.position.xyz, v2.position.xyz, tangent, binormal);
-            v0.tangent = tangent;
-            v1.tangent = tangent;
-            v2.tangent = tangent;
-            v0.binormal = binormal;
-            v1.binormal = binormal;
-            v2.binormal = binormal;
+            calculateTangentX(v0.position.xyz, v1.position.xyz, v2.position.xyz, tangent, binormal);
+            v0.tangentX = tangent;
+            v0.binormalX = binormal;
+            v1.tangentX = tangent;
+            v1.binormalX = binormal;
+            v2.tangentX = tangent;
+            v2.binormalX = binormal;
+
+            calculateTangentY(v0.position.xyz, v1.position.xyz, v2.position.xyz, tangent, binormal);
+            v0.tangentY = tangent;
+            v0.binormalY = binormal;
+            v1.tangentY = tangent;
+            v1.binormalY = binormal;
+            v2.tangentY = tangent;
+            v2.binormalY = binormal;
+
+            calculateTangentY(v0.position.xyz, v1.position.xyz, v2.position.xyz, tangent, binormal);
+            v0.tangentZ = tangent;
+            v0.binormalZ = binormal;
+            v1.tangentZ = tangent;
+            v1.binormalZ = binormal;
+            v2.tangentZ = tangent;
+            v2.binormalZ = binormal;
 
             //Get Final Pos
             v0.position = getProjectionPosition(v0.position);

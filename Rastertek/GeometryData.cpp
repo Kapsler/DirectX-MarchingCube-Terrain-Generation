@@ -484,7 +484,7 @@ ID3D11SamplerState* GeometryData::CreateDensitySamplerState(ID3D11Device* device
 	return output;
 }
 
-void GeometryData::CreatePSSamplerStates(ID3D11Device* device, ID3D11SamplerState* wrapSampler, ID3D11SamplerState* clampSampler) const
+void GeometryData::CreatePSSamplerStates(ID3D11Device* device, ID3D11SamplerState* wrapSampler, ID3D11SamplerState* clampSampler)
 {
 	//Create a basic point sampler for sampling our density data in the gpu
 	//should refactor this elsewhere
@@ -504,13 +504,13 @@ void GeometryData::CreatePSSamplerStates(ID3D11Device* device, ID3D11SamplerStat
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	device->CreateSamplerState(&sampDesc, &wrapSampler);
+	device->CreateSamplerState(&sampDesc, &m_wrapSampler);
 
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 
-	device->CreateSamplerState(&sampDesc, &clampSampler);
+	device->CreateSamplerState(&sampDesc, &m_clampSampler);
 
 }
 
@@ -606,7 +606,7 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext)
 	deviceContext->PSSetShaderResources(4, 2, m_colorTextures[2]->GetTextureViewArray());
 
 	deviceContext->PSSetSamplers(0, 1, &m_wrapSampler);
-	deviceContext->PSSetSamplers(0, 1, &m_clampSampler);
+	deviceContext->PSSetSamplers(1, 1, &m_clampSampler);
 }
 
 unsigned GeometryData::GetVertexCount()

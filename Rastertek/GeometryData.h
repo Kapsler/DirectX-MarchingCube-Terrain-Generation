@@ -62,7 +62,7 @@ private:
 	ID3D11ShaderResourceView* CreateDensityShaderResource(ID3D11Device* device, ID3D11Texture3D* texture3D) const;
 	ID3D11ShaderResourceView* CreateTriangleLUTShaderResource(ID3D11Device* device) const;
 	ID3D11SamplerState* CreateDensitySamplerState(ID3D11Device* device) const;
-	void CreatePSSamplerStates(ID3D11Device* device, ID3D11SamplerState* wrapSampler, ID3D11SamplerState* clampSampler) const;
+	void CreatePSSamplerStates(ID3D11Device* device, ID3D11SamplerState* wrapSampler, ID3D11SamplerState* clampSampler);
 	void GenerateDecalDescriptionBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	DecalDescription GetDecals() const;
 	void LoadTextures(ID3D11Device* device);
