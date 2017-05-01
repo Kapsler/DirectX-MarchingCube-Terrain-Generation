@@ -96,7 +96,7 @@ void CameraClass::DoMovement(InputClass* input)
 
 
 	float deltaTime = timer->GetFrameTime();
-	float cameraSpeed = 0.005f * deltaTime;
+	float cameraSpeed = 0.0025f * deltaTime;
 	float rotationSpeed = 0.1f * deltaTime;
 	viewQuaternion.Inverse(viewQuaternion);
 
