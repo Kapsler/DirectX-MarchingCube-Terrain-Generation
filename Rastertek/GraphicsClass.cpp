@@ -670,7 +670,7 @@ void GraphicsClass::RenderText(int inttorender, Vector2 screenPos, bool centerOr
 		screenPos, Colors::White, 0.f, origin, 0.5f);
 
 }
-
+ 
 void GraphicsClass::RegenrateTerrain()
 {
 	delete terrain;

@@ -45,7 +45,7 @@ float2 displacementMapping(float2 uv, Texture2D HeightMap, float2 viewDir)
     float refinementSteps = 25;
     float refinementStepSize = 1.0f / refinementSteps;
 
-    float2 dUV = -viewDir.xy * 1.0f * stepSize; //~displm’t depth
+    float2 dUV = -viewDir.xy * 0.8f * stepSize; //~displm’t depth
     float2 newCoords = uv;
 
     float prev_hits = 0;
@@ -109,6 +109,8 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
     float2 coord2 = input.worldPos.zx * tex_scale;
     float2 coord3 = input.worldPos.xy * tex_scale;
     
+    //tsEyeVec is currently hardcoded
+    //needs correct tangents!
     float2 tsEyeVec;
 
         // This is where you would apply conditional displacement mapping.  

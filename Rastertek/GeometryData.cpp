@@ -262,9 +262,12 @@ void GeometryData::LoadTextures(ID3D11Device* device)
 	TextureClass* rock3 = new TextureClass();
 	rock3->Initialize(device, L"./Assets/rock3.dds", L"./Assets/rock3_heightmap.dds");
 
+	TextureClass* brick = new TextureClass();
+	brick->Initialize(device, L"./Assets/brickwall.dds", L"./Assets/brickwall_heightmap.dds");
+
 	m_colorTextures[0] = rock1;
 	m_colorTextures[1] = rock2;
-	m_colorTextures[2] = rock3;
+	m_colorTextures[2] = brick;
 }
 
 void GeometryData::GenerateNoiseData()
