@@ -228,7 +228,7 @@ void main(
             v2.tangentY = tangent;
             v2.binormalY = binormal;
 
-            calculateTangentY(v0.position.xyz, v1.position.xyz, v2.position.xyz, tangent, binormal);
+            calculateTangentZ(v0.position.xyz, v1.position.xyz, v2.position.xyz, tangent, binormal);
             v0.tangentZ = tangent;
             v0.binormalZ = binormal;
             v1.tangentZ = tangent;
