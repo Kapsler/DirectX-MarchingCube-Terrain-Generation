@@ -19,17 +19,19 @@ public:
 	void Shutdown();
 	bool Render(ID3D11DeviceContext* context, int indexCount, int instanceCount,
 		XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX	projectionMatrix,
-		XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp);
+		XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp,
+		int intitialSteps, int refinementSteps, float depthfactor);
 	bool Render(ID3D11DeviceContext* context, int vertexCount,
 		XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX	projectionMatrix
-		, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp);
+		, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, 
+		int intitialSteps, int refinementSteps, float depthfactor);
 
 private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR* geometryFilename, WCHAR*);
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
-	bool SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp);
+	bool SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int intitialSteps, int refinementSteps, float depthfactor);
 	void RenderShader(ID3D11DeviceContext*, int vertexCount);
 	void RenderShader(ID3D11DeviceContext*, int indexCount, int instanceCount);
 
@@ -50,11 +52,19 @@ private:
 		float padding3;
 	};
 
+	struct FactorBufferType
+	{
+		int steps_initial;
+		int steps_refinement;
+		float depth_factor;
+		float padding;
+	};
+
 	ID3D11VertexShader* vertexShader;
 	ID3D11GeometryShader* geometryShader;
 	ID3D11PixelShader* pixelShader;
 	ID3D11InputLayout* layout;
-	ID3D11Buffer* matrixBuffer, *eyeBuffer;
+	ID3D11Buffer* matrixBuffer, *eyeBuffer, *factorBuffer;
 	ID3D11SamplerState* sampleStateWrap;
 	ID3D11SamplerState* sampleStateClamp;
 };

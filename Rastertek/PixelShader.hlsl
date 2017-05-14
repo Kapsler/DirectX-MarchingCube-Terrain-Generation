@@ -36,16 +36,23 @@ cbuffer Eye : register(b2)
     float padding3;
 };
 
+cbuffer Factors : register(b3)
+{
+    int steps_initial;
+    int steps_refinement;
+    float depthfactor;
+    float padding;
+}
 
 float2 displacementMapping(float2 uv, Texture2D HeightMap, float2 viewDir)
 { 
     //Displacement
-    float steps = 50;
+    float steps = steps_initial;
     float stepSize = 1.0f / steps;
-    float refinementSteps = 25;
+    float refinementSteps = steps_refinement;
     float refinementStepSize = 1.0f / refinementSteps;
 
-    float2 dUV = -viewDir.xy * 10.0f * 0.08f * stepSize; //~displm’t depth
+    float2 dUV = -viewDir.xy * 10.0f * depthfactor * stepSize;
     float2 newCoords = uv;
 
     float prev_hits = 0;
@@ -98,7 +105,8 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
 {
         // Determine the blend weights for the 3 planar projections.  
     // N_orig is the vertex-interpolated normal vector.  
-    float3 blend_weights = abs(input.normal.xyz); // Tighten up the blending zone: 
+    float3 blend_weights = abs(input.normal.xyz); // Tighten up the blending zone: 4
+    bool useDisplacement = false;
     blend_weights = (blend_weights - 0.2) * 7;
     blend_weights = max(blend_weights, 0); // Force weights to sum to 1.0 (very important!)  
     blend_weights /= (blend_weights.x + blend_weights.y + blend_weights.z).xxx;
@@ -114,33 +122,36 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
     float2 tsEyeVec;
 
         // This is where you would apply conditional displacement mapping.  
-    if (blend_weights.x > 0)
+    if (useDisplacement)
     {
-        tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
-        tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
+        if (blend_weights.x > 0)
+        {
+            tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
+            tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
         //tsEyeVec.x = dot(-viewDir.xyz, input.tangentX);
         //tsEyeVec.y = dot(-viewDir.xyz, input.binormalX);
-        coord1 = displacementMapping(coord1, triplanarTexX[1], tsEyeVec);
-    }
+            coord1 = displacementMapping(coord1, triplanarTexX[1], tsEyeVec);
+        }
 
-    if (blend_weights.y > 0)
-    {
-        tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
-        tsEyeVec.y = dot(viewDir.xyz, float3(1.0f, 0.0f, 0.0f));
+        if (blend_weights.y > 0)
+        {
+            tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
+            tsEyeVec.y = dot(viewDir.xyz, float3(1.0f, 0.0f, 0.0f));
         //tsEyeVec.x = dot(-viewDir.xyz, input.tangentY);
         //tsEyeVec.y = dot(-viewDir.xyz, input.binormalY);
-        coord2 = displacementMapping(coord2, triplanarTexY[1], tsEyeVec);
-    }
+            coord2 = displacementMapping(coord2, triplanarTexY[1], tsEyeVec);
+        }
 
-    if (blend_weights.z > 0)
-    {
-        tsEyeVec.x = dot(viewDir.xyz, float3(1.0f, 0.0f, 0.0f));
-        tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
+        if (blend_weights.z > 0)
+        {
+            tsEyeVec.x = dot(viewDir.xyz, float3(1.0f, 0.0f, 0.0f));
+            tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
         //tsEyeVec.x = dot(-viewDir.xyz, input.tangentZ);
         //tsEyeVec.y = dot(-viewDir.xyz, input.binormalZ);
-        coord3 = displacementMapping(coord3, triplanarTexZ[1], tsEyeVec);
+            coord3 = displacementMapping(coord3, triplanarTexZ[1], tsEyeVec);
+        }
     }
-
+   
         // Sample color maps for each projection, at those UV coords.  
     float4 col1 = triplanarTexX[0].Sample(SampleTypeWrap, coord1);
     float4 col2 = triplanarTexY[0].Sample(SampleTypeWrap, coord2);
@@ -189,22 +200,6 @@ float4 main(PixelInputType input) : SV_TARGET
     float3 blended_bump_vec;
    
     triPlanarTexturing(input, tex_scale, viewDir, blended_color, blended_bump_vec);
-    //{
-    //    float2 uv = (input.worldPos.yz / 2.0f + 0.5f) * tex_scale;
-
-    //float2 tsEyeVec;
-    //tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
-    //tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
-
-    //    uv = displacementMapping(uv, triplanarTexX[1], tsEyeVec);
-
-    //    blended_color = triplanarTexX[0].Sample(SampleTypeWrap, uv);
-    //    blended_bump_vec = triplanarTexX[1].Sample(SampleTypeWrap, uv).rgb;
-    //    //blended_bump_vec = blended_bump_vec * 2.0f - 1.0f;
-    //    //blended_bump_vec = normalize(blended_bump_vec);
-    //    //blended_bump_vec.z *= -1.0f;
-    //    //blended_bump_vec = mul(float4(blended_bump_vec, 0.0f), worldMatrix).xyz;
-    //}
 
     // Apply bump vector to vertex-interpolated normal vector.  
     float4 N_for_lighting;

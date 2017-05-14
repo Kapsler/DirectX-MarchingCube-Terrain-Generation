@@ -236,7 +236,8 @@ bool GraphicsClass::Frame(InputClass* input)
 	CheckWireframe(input); 
 	CheckMSKeys(input);
 	CheckTerrainKey(input);
-	CheckRotationKey(input);
+	CheckRotationKey(input); 
+	CheckFactorKeys(input);
 
 	// Update the rotation variable each frame.
 	rotation += static_cast<float>(XM_PI) * 0.0001f;
@@ -468,7 +469,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	{
 		terrain->worldMatrix = terrain->worldMatrix * XMMatrixRotationY(0.01f);
 	}
-	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp());
+	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
 
 	//Text
 	ID3D11DepthStencilState* depthstate;
@@ -602,6 +603,66 @@ void GraphicsClass::CheckRotationKey(InputClass* input)
 	}
 }
 
+void GraphicsClass::CheckFactorKeys(InputClass* input)
+{
+
+	unsigned int ikey = 0x49;
+	unsigned int okey = 0x4F;
+	unsigned int kkey = 0x4B;
+	unsigned int lkey = 0x4C;
+	unsigned int ukey = 0x55;
+	unsigned int jkey = 0x4A;
+
+	if (!factorKeyToggle)
+	{
+		if (input->IsKeyDown(okey))
+		{
+			steps_initial += 5;
+		}
+
+		if (input->IsKeyDown(ikey))
+		{
+			if (steps_initial >= 5)
+			{
+				steps_initial -= 5;
+			}
+		}
+
+		if (input->IsKeyDown(lkey))
+		{
+			steps_refinement += 5;
+		}
+
+		if (input->IsKeyDown(kkey))
+		{
+			if (steps_refinement >= 5)
+			{
+				steps_refinement -= 5;
+			}
+
+		}
+
+		if (input->IsKeyDown(ukey))
+		{
+			depthfactor += 0.01f;
+		}
+
+		if (input->IsKeyDown(jkey))
+		{
+			depthfactor -= 0.01f;
+
+		}
+
+		factorKeyToggle = true;
+	}
+
+	if (input->IsKeyUp(ikey) && input->IsKeyUp(okey) && input->IsKeyUp(kkey) && input->IsKeyUp(lkey) && input->IsKeyUp(ukey) && input->IsKeyUp(jkey))
+	{
+		factorKeyToggle = false;
+	}
+
+}
+
 void GraphicsClass::SetLightDirection(InputClass* input)
 {
 	unsigned int onekey = 0x31;
@@ -675,7 +736,6 @@ void GraphicsClass::RegenrateTerrain()
 {
 	delete terrain;
 
-	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::CUBE, direct3D->GetDevice(), direct3D->GetDeviceContext());
+	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext());
 	//terrain->DebugPrint();
-	//terrain->worldMatrix = terrain->worldMatrix * XMMatrixScaling(10.0f, 10.0f, 10.0f);
 }

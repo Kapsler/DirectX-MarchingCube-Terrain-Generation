@@ -46,6 +46,7 @@ private:
 	void CheckMSKeys(InputClass*);
 	void CheckTerrainKey(InputClass* input);
 	void CheckRotationKey(InputClass* input);
+	void CheckFactorKeys(InputClass* input);
 	void SetLightDirection(InputClass*);
 	void ChangeFillmode(D3D11_FILL_MODE);
 	void RenderText(string texttorender, Vector2 screenPos, bool centerOrigin);
@@ -63,10 +64,14 @@ private:
 
 	bool wireframeMode, wireframeKeyToggle = false, bumpinessKeyToggle = false, msmodetoggle = false, terrainKeyToggle = false;
 	bool rotationKeyToggle = false;
+	bool factorKeyToggle = false;
 	bool rotate = false;
 	float bumpiness;
 	int currentScreenWidth, currentScreenHeight;
 	float fps;
+	int steps_initial = 10;
+	int steps_refinement = 5;
+	float depthfactor = 0.08f;
 
 	unique_ptr<DirectX::SpriteFont> m_font;
 	DirectX::SimpleMath::Vector2 fpsPos, scPos, qlPos;
