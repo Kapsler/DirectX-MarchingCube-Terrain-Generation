@@ -847,13 +847,14 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 {
 	SetBufferData(deviceContext, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
 
-	UINT offset = 0, stride = sizeof(VertexInputType);
 
 	if(!isGeometryGenerated)
 	{
 		MarchingCubeRenderpass(deviceContext);	
 		return;
 	}
+
+	UINT offset = 0, stride = sizeof(VertexInputType);
 
 	//Set Shaders
 	geometryVS->Set(deviceContext);

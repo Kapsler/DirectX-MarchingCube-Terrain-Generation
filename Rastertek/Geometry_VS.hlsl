@@ -26,10 +26,10 @@ PixelInput main(VertexInput input)
     PixelInput output;
 
     output.position = mul(input.position, worldMatrix);
+    output.worldPos = output.position;
     output.position = mul(output.position, viewMatrix);
     output.position = mul(output.position, projectionMatrix);
     output.color = input.color;
-    output.worldPos = input.worldPos;
     output.normal = input.normal;
 
 	return output;
