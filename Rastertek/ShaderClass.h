@@ -5,6 +5,9 @@
 #include <DirectXMath.h>
 #include <DirectXColors.h>
 #include <fstream>
+#include "VertexShader.h"
+#include "PixelShader.h"
+#include "GeometryShader.h"
 using namespace DirectX;
 using namespace std;
 
@@ -29,7 +32,6 @@ public:
 private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR* geometryFilename, WCHAR*);
 	void ShutdownShader();
-	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
 	bool SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int intitialSteps, int refinementSteps, float depthfactor);
 	void RenderShader(ID3D11DeviceContext*, int vertexCount);
@@ -60,11 +62,11 @@ private:
 		float padding;
 	};
 
-	ID3D11VertexShader* vertexShader;
-	ID3D11GeometryShader* geometryShader;
-	ID3D11PixelShader* pixelShader;
-	ID3D11InputLayout* layout;
 	ID3D11Buffer* matrixBuffer, *eyeBuffer, *factorBuffer;
 	ID3D11SamplerState* sampleStateWrap;
 	ID3D11SamplerState* sampleStateClamp;
+
+	VertexShader* vs;
+	PixelShader* ps;
+	GeometryShader* gs;
 };

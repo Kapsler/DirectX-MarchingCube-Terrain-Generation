@@ -465,10 +465,6 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	
 	//Render Geometry
 	terrain->Render(direct3D->GetDeviceContext());
-	if(rotate)
-	{
-		terrain->worldMatrix = terrain->worldMatrix * XMMatrixRotationY(0.01f);
-	}
 	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
 
 	//Text

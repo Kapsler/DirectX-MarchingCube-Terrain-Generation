@@ -25,8 +25,6 @@ cbuffer MatrixBuffer : register(b0)
     matrix projectionMatrix;
 };
 
-
-
 cbuffer DecalDescription : register(b1)
 {
     float4 decal[8];

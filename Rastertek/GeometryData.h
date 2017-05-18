@@ -5,6 +5,7 @@
 #include <random>
 #include <chrono>
 #include "TextureClass.h"
+#include "VertexShader.h"
 
 class GeometryData
 {
@@ -73,7 +74,7 @@ private:
 	ID3D11ShaderResourceView* m_densityMap;
 	ID3D11ShaderResourceView* m_triangleLUT;
 	ID3D11SamplerState *m_densitySampler, *m_wrapSampler, *m_clampSampler;
-	ID3D11Buffer *m_vertexBuffer = nullptr;;
+	ID3D11Buffer *m_vertexBuffer = nullptr;
 	ID3D11Buffer* m_decalDescriptionBuffer = nullptr;
 
 	//Textures

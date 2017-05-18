@@ -170,9 +170,11 @@
     <ClCompile Include="CameraClass.cpp" />
     <ClCompile Include="DepthShaderClass.cpp" />
     <ClCompile Include="GeometryData.cpp" />
+    <ClCompile Include="GeometryShader.cpp" />
     <ClCompile Include="LightClass.cpp" />
     <ClCompile Include="modelclass.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
+    <ClCompile Include="PixelShader.cpp" />
     <ClCompile Include="RenderTextureClass.cpp" />
     <ClCompile Include="ShaderClass.cpp" />
     <ClCompile Include="D3DClass.cpp" />
@@ -182,16 +184,19 @@
     <ClCompile Include="SystemClass.cpp" />
     <ClCompile Include="TextureClass.cpp" />
     <ClCompile Include="TimerClass.cpp" />
+    <ClCompile Include="VertexShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraClass.h" />
     <ClInclude Include="DepthShaderClass.h" />
     <ClInclude Include="GeometryData.h" />
+    <ClInclude Include="GeometryShader.h" />
     <ClInclude Include="LightClass.h" />
     <ClInclude Include="ltalloc.h" />
     <ClInclude Include="ltalloc.hpp" />
     <ClInclude Include="modelclass.h" />
     <ClInclude Include="PerformanceTimer.h" />
+    <ClInclude Include="PixelShader.h" />
     <ClInclude Include="RenderTextureClass.h" />
     <ClInclude Include="ShaderClass.h" />
     <ClInclude Include="D3DClass.h" />
@@ -202,6 +207,7 @@
     <ClInclude Include="TimerClass.h" />
     <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="TriangleLUT.h" />
+    <ClInclude Include="VertexShader.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DepthPixelShader.hlsl">

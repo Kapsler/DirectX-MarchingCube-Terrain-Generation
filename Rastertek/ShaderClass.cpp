@@ -3,13 +3,12 @@
 
 ShaderClass::ShaderClass()
 {
-	vertexShader = nullptr;
-	geometryShader = nullptr;
-	pixelShader = nullptr;
-	layout = nullptr;
 	matrixBuffer = nullptr;
 	sampleStateWrap = nullptr;
 	sampleStateClamp = nullptr;
+	vs = nullptr;
+	ps = nullptr;
+	gs = nullptr;
 }
 
 ShaderClass::ShaderClass(const ShaderClass&)
@@ -74,90 +73,11 @@ bool ShaderClass::Render(ID3D11DeviceContext* context, int vertexCount, XMMATRIX
 bool ShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vertexFilename, WCHAR* geometryFilename, WCHAR* pixelFilename)
 {
 	HRESULT result;
-	ID3DBlob* errorMessage;
-	ID3DBlob* vertexShaderBuffer;
-	ID3DBlob* geometryShaderBuffer;
-	ID3DBlob* pixelShaderBuffer;
+	
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
-	unsigned int numElements;
 	D3D11_BUFFER_DESC matrixBufferDesc, eyeBufferDesc, factorBufferDesc;
 	D3D11_SAMPLER_DESC samplerDesc;
-	DWORD shaderflags = 
-		D3DCOMPILE_ENABLE_STRICTNESS 
-	| D3DCOMPILE_DEBUG 
-	| D3DCOMPILE_SKIP_OPTIMIZATION
-	;
-
-	errorMessage = nullptr;
-	vertexShaderBuffer = nullptr;
-	pixelShaderBuffer = nullptr;
-
-	//Compile vertex shader
-	result = D3DCompileFromFile(vertexFilename, nullptr, nullptr, "main", "vs_5_0", shaderflags, 0, &vertexShaderBuffer, &errorMessage);
-	if (FAILED(result))
-	{
-		if (errorMessage)
-		{
-			OutputShaderErrorMessage(errorMessage, hwnd, vertexFilename);
-		}
-		else
-		{
-			MessageBox(hwnd, vertexFilename, L"Missing Shader File", MB_OK);
-		}
-
-		return false;
-	}
-
-	//Compile geometry shader
-	result = D3DCompileFromFile(geometryFilename, nullptr, nullptr, "main", "gs_5_0", shaderflags, 0, &geometryShaderBuffer, &errorMessage);
-	if (FAILED(result))
-	{
-		if (errorMessage)
-		{
-			OutputShaderErrorMessage(errorMessage, hwnd, vertexFilename);
-		}
-		else
-		{
-			MessageBox(hwnd, vertexFilename, L"Missing Shader File", MB_OK);
-		}
-
-		return false;
-	}
-
-	//Compile Pixel Shader
-	result = D3DCompileFromFile(pixelFilename, nullptr, nullptr, "main", "ps_5_0", shaderflags, 0, &pixelShaderBuffer, &errorMessage);
-	if (FAILED(result))
-	{
-		if (errorMessage)
-		{
-			OutputShaderErrorMessage(errorMessage, hwnd, pixelFilename);
-		}
-		else
-		{
-			MessageBox(hwnd, pixelFilename, L"Missing Shader File", MB_OK);
-		}
-
-		return false;
-	}
-
-	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), nullptr, &vertexShader);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	result = device->CreateGeometryShader(geometryShaderBuffer->GetBufferPointer(), geometryShaderBuffer->GetBufferSize(), nullptr, &geometryShader);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), nullptr, &pixelShader);
-	if(FAILED(result))
-	{
-		return false;
-	}
-
+	
 	//Vertex Input Layout Description
 	//needs to mach VertexInputType
 	polygonLayout[0].SemanticName = "POSITION";
@@ -176,20 +96,14 @@ bool ShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* verte
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
 
-	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+	vs = new VertexShader();
+	vs->Initialize(device, vertexFilename, polygonLayout);
 
-	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), &layout);
-	if(FAILED(result))
-	{
-		return false;
-	}
+	ps = new PixelShader();
+	ps->Initialize(device, pixelFilename);
 
-	//Release Buffer which are no longer needed
-	vertexShaderBuffer->Release();
-	vertexShaderBuffer = nullptr;
-
-	pixelShaderBuffer->Release();
-	pixelShaderBuffer = nullptr;
+	gs = new GeometryShader();
+	gs->Initialize(device, geometryFilename);
 
 	//Create wrap sampler state desc
 	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -292,49 +206,21 @@ void ShaderClass::ShutdownShader()
 		matrixBuffer->Release();
 		matrixBuffer = nullptr;
 	}
-	if(layout)
+	if (ps)
 	{
-		layout->Release();
-		layout = nullptr;
+		delete ps;
+		ps = nullptr;
 	}
-	if (pixelShader)
+	if (gs)
 	{
-		pixelShader->Release();
-		pixelShader = nullptr;
+		delete gs;
+		gs = nullptr;
 	}
-	if (geometryShader)
+	if(vs)
 	{
-		geometryShader->Release();
-		geometryShader = nullptr;
+		delete vs;
+		vs = nullptr;
 	}
-	if(vertexShader)
-	{
-		vertexShader->Release();
-		vertexShader = nullptr;
-	}
-}
-
-void ShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
-{
-	char* compileErrors;
-	unsigned long long bufferSize;
-	ofstream fout;
-
-	compileErrors = static_cast<char*>(errorMessage->GetBufferPointer());
-	bufferSize = errorMessage->GetBufferSize();
-
-	fout.open("shader-error.txt");
-	for(auto i = 0; i<bufferSize; i++)
-	{
-		fout << compileErrors;
-	}
-	fout.close();
-
-	errorMessage->Release();
-	errorMessage = nullptr;
-
-	MessageBox(hwnd, L"Error compiling shader. Check shader-error.txt for message.", shaderFilename, MB_OK);
-
 }
 
 bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
@@ -417,13 +303,10 @@ bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX wor
 
 void ShaderClass::RenderShader(ID3D11DeviceContext* context, int vertexCount)
 {
-	//Vertex Input Layout
-	context->IASetInputLayout(layout);
-
 	//Set Shaders
-	context->VSSetShader(vertexShader, nullptr, 0);
-	context->GSSetShader(geometryShader, nullptr, 0);
-	context->PSSetShader(pixelShader, nullptr, 0);
+	vs->Set(context);
+	gs->Set(context);
+	ps->Set(context);
 
 	//Set sample States
 	context->PSSetSamplers(0, 1, &sampleStateWrap);
@@ -434,13 +317,10 @@ void ShaderClass::RenderShader(ID3D11DeviceContext* context, int vertexCount)
 
 void ShaderClass::RenderShader(ID3D11DeviceContext* context, int indexCount, int instanceCount)
 {
-	//Vertex Input Layout
-	context->IASetInputLayout(layout);
-
 	//Set Shaders
-	context->VSSetShader(vertexShader, nullptr, 0);
-	context->GSSetShader(geometryShader, nullptr, 0);
-	context->PSSetShader(pixelShader, nullptr, 0);
+	vs->Set(context);
+	gs->Set(context);
+	ps->Set(context);
 
 	//Set sample States
 	context->PSSetSamplers(0, 1, &sampleStateWrap);
