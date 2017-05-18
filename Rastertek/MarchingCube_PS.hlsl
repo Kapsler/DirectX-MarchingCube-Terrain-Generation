@@ -11,12 +11,6 @@ struct PixelInputType
     float4 worldPos : POSITION;
     float4 color : COLOR0;
     float4 normal : NORMAL;
-    float3 tangentX : TANGENT0;
-    float3 tangentY : TANGENT1;
-    float3 tangentZ : TANGENT2;
-    float3 binormalX : BINORMAL0;
-    float3 binormalY : BINORMAL1;
-    float3 binormalZ : BINORMAL2;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -128,8 +122,6 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
         {
             tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
             tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
-        //tsEyeVec.x = dot(-viewDir.xyz, input.tangentX);
-        //tsEyeVec.y = dot(-viewDir.xyz, input.binormalX);
             coord1 = displacementMapping(coord1, triplanarTexX[1], tsEyeVec);
         }
 
@@ -137,8 +129,6 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
         {
             tsEyeVec.x = dot(viewDir.xyz, float3(0.0f, 0.0f, 1.0f));
             tsEyeVec.y = dot(viewDir.xyz, float3(1.0f, 0.0f, 0.0f));
-        //tsEyeVec.x = dot(-viewDir.xyz, input.tangentY);
-        //tsEyeVec.y = dot(-viewDir.xyz, input.binormalY);
             coord2 = displacementMapping(coord2, triplanarTexY[1], tsEyeVec);
         }
 
@@ -146,8 +136,6 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
         {
             tsEyeVec.x = dot(viewDir.xyz, float3(1.0f, 0.0f, 0.0f));
             tsEyeVec.y = dot(viewDir.xyz, float3(0.0f, 1.0f, 0.0f));
-        //tsEyeVec.x = dot(-viewDir.xyz, input.tangentZ);
-        //tsEyeVec.y = dot(-viewDir.xyz, input.binormalZ);
             coord3 = displacementMapping(coord3, triplanarTexZ[1], tsEyeVec);
         }
     }

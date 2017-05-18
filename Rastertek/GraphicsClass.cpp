@@ -11,7 +11,6 @@ GraphicsClass::GraphicsClass()
 {
 	direct3D = nullptr;
 	camera = nullptr;
-	shader = nullptr;
 	light = nullptr;
 	renderTexture = nullptr;
 	timer = nullptr;
@@ -126,20 +125,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	//Set up shader
-	shader = new ShaderClass();
-	if (!shader)
-	{
-		return false;
-	}
-
-	result = shader->Initialize(direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize shader object", L"Error", MB_OK);
-		return false;
-	}
-
 	//Text
 	m_font.reset(new SpriteFont(direct3D->GetDevice(), L"./Assets/myfile.spritefont"));
 
@@ -192,13 +177,6 @@ void GraphicsClass::Shutdown()
 	{
 		delete timer;
 		timer = nullptr;
-	}
-
-	if (shader)
-	{
-		shader->Shutdown();
-		delete shader;
-		shader = nullptr;
 	}
 
 	if (camera)
@@ -464,8 +442,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	light->GetProjectionMatrix(lightProjectionMatrix);
 	
 	//Render Geometry
-	terrain->Render(direct3D->GetDeviceContext());
-	shader->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
+	terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
 
 	//Text
 	ID3D11DepthStencilState* depthstate;

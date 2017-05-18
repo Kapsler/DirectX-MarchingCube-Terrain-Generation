@@ -36,9 +36,6 @@
     <ClCompile Include="TextureClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TimerClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,9 +81,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TextureClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="InputClass.h">
@@ -136,11 +130,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="PixelShader.hlsl" />
-    <FxCompile Include="VertexShader.hlsl" />
     <FxCompile Include="DepthVertexShader.hlsl" />
     <FxCompile Include="DepthPixelShader.hlsl" />
-    <FxCompile Include="GeometryShader.hlsl" />
+    <FxCompile Include="MarchingCube_GS.hlsl" />
+    <FxCompile Include="MarchingCube_VS.hlsl" />
+    <FxCompile Include="MarchingCube_PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

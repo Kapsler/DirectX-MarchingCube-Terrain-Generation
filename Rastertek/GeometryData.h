@@ -6,6 +6,8 @@
 #include <chrono>
 #include "TextureClass.h"
 #include "VertexShader.h"
+#include "GeometryShader.h"
+#include "PixelShader.h"
 
 class GeometryData
 {
@@ -28,11 +30,35 @@ public:
 	~GeometryData();
 
 	void DebugPrint();
-	void Render(ID3D11DeviceContext* deviceContext);
+	void Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor);
 	unsigned int GetVertexCount();
 
 	DirectX::XMMATRIX worldMatrix;
 private:
+	struct MatrixBufferType
+	{
+		XMMATRIX world;
+		XMMATRIX view;
+		XMMATRIX projection;
+	};
+
+	struct EyeBufferType
+	{
+		XMFLOAT3 position;
+		float padding1;
+		XMFLOAT3 forward;
+		float padding2;
+		XMFLOAT3 up;
+		float padding3;
+	};
+
+	struct FactorBufferType
+	{
+		int steps_initial;
+		int steps_refinement;
+		float depth_factor;
+		float padding;
+	};
 
 	struct VertexInputType
 	{
@@ -55,8 +81,10 @@ private:
 	void GenerateBumpySphere();
 	void GenerateHelixStructure();
 
+	bool SetBufferData(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor);
 	int GetVertices(VertexInputType** outVertices);
-	void InitializeBuffers(ID3D11Device*);
+	bool InitializeBuffers(ID3D11Device* device);
+	bool InitializeShaders(ID3D11Device* device, WCHAR* vertexFilename, WCHAR* geometryFilename, WCHAR* pixelFilename);
 	D3D11_TEXTURE3D_DESC CreateTextureDesc() const;
 	D3D11_SUBRESOURCE_DATA CreateSubresourceData() const;
 	ID3D11Texture3D* CreateTexture(ID3D11Device* device, D3D11_TEXTURE3D_DESC texDesc, D3D11_SUBRESOURCE_DATA subData) const;
@@ -76,6 +104,11 @@ private:
 	ID3D11SamplerState *m_densitySampler, *m_wrapSampler, *m_clampSampler;
 	ID3D11Buffer *m_vertexBuffer = nullptr;
 	ID3D11Buffer* m_decalDescriptionBuffer = nullptr;
+	ID3D11Buffer* matrixBuffer, *eyeBuffer, *factorBuffer;
+
+	VertexShader* vs;
+	PixelShader* ps;
+	GeometryShader* gs;
 
 	//Textures
 	TextureClass* m_colorTextures[3] = {nullptr};

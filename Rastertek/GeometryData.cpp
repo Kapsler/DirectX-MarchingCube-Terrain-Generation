@@ -42,6 +42,7 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	m_densityMap = CreateDensityShaderResource(device, m_texture3D);
 	m_triangleLUT = CreateTriangleLUTShaderResource(device);
 	m_densitySampler = CreateDensitySamplerState(device);
+	InitializeShaders(device, L"MarchingCube_VS.hlsl", L"MarchingCube_GS.hlsl", L"MarchingCube_PS.hlsl");
 	LoadTextures(device);
 	CreatePSSamplerStates(device, m_wrapSampler, m_clampSampler);
 	InitializeBuffers(device);
@@ -250,6 +251,77 @@ void GeometryData::GenerateHelixStructure()
 	}
 }
 
+bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
+{
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	MatrixBufferType* matrixData;
+	EyeBufferType* eyeData;
+	FactorBufferType* factorData;
+
+	//DirectX11 need matrices transposed!
+	XMMATRIX world = XMMatrixTranspose(worldMatrix);
+	viewMatrix = XMMatrixTranspose(viewMatrix);
+	projectionMatrix = XMMatrixTranspose(projectionMatrix);
+
+	// ### MATRIXBUFFER ###
+	//Lock Buffer
+	result = context->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	//Get pointer to data
+	matrixData = static_cast<MatrixBufferType*>(mappedResource.pData);
+
+	//Set data
+	matrixData->world = world;
+	matrixData->view = viewMatrix;
+	matrixData->projection = projectionMatrix;
+
+	context->Unmap(matrixBuffer, 0);
+
+	// ### EyeBuffer ###
+	//Lock Buffer
+	result = context->Map(eyeBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	//Get pointer to data
+	eyeData = static_cast<EyeBufferType*>(mappedResource.pData);
+
+	//Set data
+	eyeData->position = eyePos;
+	eyeData->forward = eyeDir;
+	eyeData->up = eyeUp;
+
+	context->Unmap(eyeBuffer, 0);
+
+	// ### FactorBuffer (Pixel Shader Displacement) ###
+	//Lock Buffer
+	result = context->Map(factorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	//Get pointer to data
+	factorData = static_cast<FactorBufferType*>(mappedResource.pData);
+
+	//Set data
+	factorData->steps_initial = initialSteps;
+	factorData->steps_refinement = refinementSteps;
+	factorData->depth_factor = depthfactor;
+
+	context->Unmap(factorBuffer, 0);
+
+
+	return true;
+}
+
 void GeometryData::LoadTextures(ID3D11Device* device)
 {
 
@@ -350,36 +422,131 @@ int GeometryData::GetVertices(VertexInputType** outVertices)
 }
 
 
-void GeometryData::InitializeBuffers(ID3D11Device* device)
+bool GeometryData::InitializeBuffers(ID3D11Device* device)
 {
+	HRESULT result;
+	D3D11_BUFFER_DESC matrixBufferDesc, eyeBufferDesc, factorBufferDesc;
 	VertexInputType* vertices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData;
 
-
 	// Set the number of vertices in the vertex array.
 	m_vertexCount = GetVertices(&vertices);
 
-	// Set up the description of the static vertex buffer.
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(VertexInputType) * m_vertexCount;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
+	// VertexBuffer
+	{
+		
+		// Set up the description of the static vertex buffer.
+		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		vertexBufferDesc.ByteWidth = sizeof(VertexInputType) * m_vertexCount;
+		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vertexBufferDesc.CPUAccessFlags = 0;
+		vertexBufferDesc.MiscFlags = 0;
+		vertexBufferDesc.StructureByteStride = 0;
 
-	// Give the subresource structure a pointer to the vertex data.
-	vertexData.pSysMem = vertices;
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
+		// Give the subresource structure a pointer to the vertex data.
+		vertexData.pSysMem = vertices;
+		vertexData.SysMemPitch = 0;
+		vertexData.SysMemSlicePitch = 0;
 
-	// Now create the vertex buffer.
-	device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer);
+		// Now create the vertex buffer.
+		device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer);
 
-	// Release the arrays now that the vertex and index buffers have been created and loaded.
-	delete[] vertices;
-	vertices = nullptr;
+		// Release the arrays now that the vertex and index buffers have been created and loaded.
+		delete[] vertices;
+		vertices = nullptr;
+	}
 
+	//MatrixBuffer
+	{
+		//Setup matrix Buffer Description
+		matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+		matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		matrixBufferDesc.MiscFlags = 0;
+		matrixBufferDesc.StructureByteStride = 0;
+
+		//Make Buffer accessible
+		result = device->CreateBuffer(&matrixBufferDesc, nullptr, &matrixBuffer);
+		if (FAILED(result))
+		{
+			return false;
+		}
+	}
+
+	//EyeBuffer
+	{
+		//Setup Eye Buffer Description
+		eyeBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		eyeBufferDesc.ByteWidth = sizeof(EyeBufferType);
+		eyeBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		eyeBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		eyeBufferDesc.MiscFlags = 0;
+		eyeBufferDesc.StructureByteStride = 0;
+
+		//Make Buffer accessible
+		result = device->CreateBuffer(&eyeBufferDesc, nullptr, &eyeBuffer);
+		if (FAILED(result))
+		{
+			return false;
+		}
+	}
+
+	//PixelDisplacementBuffer
+	{
+		//Setup Eye Buffer Description
+		factorBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		factorBufferDesc.ByteWidth = sizeof(FactorBufferType);
+		factorBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		factorBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		factorBufferDesc.MiscFlags = 0;
+		factorBufferDesc.StructureByteStride = 0;
+
+		//Make Buffer accessible
+		result = device->CreateBuffer(&factorBufferDesc, nullptr, &factorBuffer);
+		if (FAILED(result))
+		{
+			return false;
+		}
+	}
+
+	return true;
+
+}
+
+bool GeometryData::InitializeShaders(ID3D11Device* device, WCHAR* vertexFilename, WCHAR* geometryFilename, WCHAR* pixelFilename)
+{
+	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
+
+	//Vertex Input Layout Description
+	//needs to mach VertexInputType
+	polygonLayout[0].SemanticName = "POSITION";
+	polygonLayout[0].SemanticIndex = 0;
+	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	polygonLayout[0].InputSlot = 0;
+	polygonLayout[0].AlignedByteOffset = 0;
+	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	polygonLayout[0].InstanceDataStepRate = 0;
+
+	polygonLayout[1].SemanticName = "COLOR";
+	polygonLayout[1].SemanticIndex = 0;
+	polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	polygonLayout[1].InputSlot = 0;
+	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	polygonLayout[1].InstanceDataStepRate = 0;
+
+	vs = new VertexShader();
+	vs->Initialize(device, vertexFilename, polygonLayout);
+
+	ps = new PixelShader();
+	ps->Initialize(device, pixelFilename);
+
+	gs = new GeometryShader();
+	gs->Initialize(device, geometryFilename);
+
+	return true;
 }
 
 D3D11_TEXTURE3D_DESC GeometryData::CreateTextureDesc() const
@@ -582,14 +749,21 @@ void GeometryData::DebugPrint()
 	}
 }
 
-void GeometryData::Render(ID3D11DeviceContext* deviceContext)
+void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
 {
+	SetBufferData(deviceContext, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
+
 	unsigned int stride;
 	unsigned int offset;
 
 	// Set vertex buffer stride and offset.
 	stride = sizeof(VertexInputType);
 	offset = 0;
+
+	//Set Shaders
+	vs->Set(deviceContext);
+	gs->Set(deviceContext);
+	ps->Set(deviceContext);
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
 	deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
@@ -610,6 +784,16 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext)
 
 	deviceContext->PSSetSamplers(0, 1, &m_wrapSampler);
 	deviceContext->PSSetSamplers(1, 1, &m_clampSampler);
+
+	//Set constant buffer
+	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
+	deviceContext->GSSetConstantBuffers(0, 1, &matrixBuffer);
+	deviceContext->PSSetConstantBuffers(0, 1, &matrixBuffer);
+	deviceContext->PSSetConstantBuffers(2, 1, &eyeBuffer);
+	deviceContext->PSSetConstantBuffers(3, 1, &factorBuffer);
+
+	deviceContext->Draw(m_vertexCount, 0);
+
 }
 
 unsigned GeometryData::GetVertexCount()

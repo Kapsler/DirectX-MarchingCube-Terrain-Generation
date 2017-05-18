@@ -2,7 +2,6 @@
 
 #include "D3DClass.h"
 #include "CameraClass.h"
-#include "ShaderClass.h"
 #include "TextureClass.h"
 #include <vector>
 #include "LightClass.h"
@@ -55,7 +54,6 @@ private:
 
 	D3DClass* direct3D;
 	CameraClass* camera;
-	ShaderClass* shader;
 	HWND* hwndptr;
 	LightClass* light;
 	TimerClass* timer;
