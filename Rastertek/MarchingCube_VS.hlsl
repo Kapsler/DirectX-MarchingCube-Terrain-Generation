@@ -7,7 +7,7 @@ cbuffer MatrixBuffer
 
 struct VertexInputType
 {
-    float3 position : POSITION;
+    float3 position : SV_POSITION;
     float4 color : COLOR;
 };
 

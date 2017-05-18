@@ -42,7 +42,7 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	m_densityMap = CreateDensityShaderResource(device, m_texture3D);
 	m_triangleLUT = CreateTriangleLUTShaderResource(device);
 	m_densitySampler = CreateDensitySamplerState(device);
-	InitializeShaders(device, L"MarchingCube_VS.hlsl", L"MarchingCube_GS.hlsl", L"MarchingCube_PS.hlsl");
+	InitializeShaders(device);
 	LoadTextures(device);
 	CreatePSSamplerStates(device, m_wrapSampler, m_clampSampler);
 	InitializeBuffers(device);
@@ -342,6 +342,36 @@ void GeometryData::LoadTextures(ID3D11Device* device)
 	m_colorTextures[2] = brick;
 }
 
+void GeometryData::MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext)
+{
+	UINT offset = 0, stride = sizeof(MarchingCubeVertexInputType);
+	deviceContext->SOSetTargets(1, &marchingCubeGSO->outputBuffer, &offset);
+
+	marchingCubeVS->Set(deviceContext);
+	marchingCubeGSO->Set(deviceContext);
+
+	// Set the vertex buffer to active in the input assembler so it can be rendered.
+	deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
+
+	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+	//Density Map to use
+	deviceContext->GSSetShaderResources(0, 1, &m_densityMap);
+	deviceContext->GSSetShaderResources(1, 1, &m_triangleLUT);
+	//Set point sampler to use in the geometry shader
+	deviceContext->GSSetSamplers(0, 1, &m_densitySampler);
+	deviceContext->GSSetConstantBuffers(1, 1, &m_decalDescriptionBuffer);
+
+	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
+	deviceContext->GSSetConstantBuffers(0, 1, &matrixBuffer);
+
+	deviceContext->Draw(m_vertexCount, 0);
+
+	deviceContext->SOSetTargets(0, nullptr, nullptr);
+	isGeometryGenerated = true;
+}
+
 void GeometryData::GenerateNoiseData()
 {
 	size_t index = 0u;
@@ -396,13 +426,13 @@ void GeometryData::GenerateBumpySphere()
 	}
 }
 
-int GeometryData::GetVertices(VertexInputType** outVertices)
+int GeometryData::GetVertices(MarchingCubeVertexInputType** outVertices)
 {
 	int size = int(2.0f / m_cubeStep.x);
 	size = size * size * size;
 	m_vertexCount = size;
 
-	(*outVertices) = new VertexInputType[size];
+	(*outVertices) = new MarchingCubeVertexInputType[size];
 	int idx = 0;
 	for (float z = -1; z < 1.0f; z += m_cubeStep.z)
 	{
@@ -426,7 +456,7 @@ bool GeometryData::InitializeBuffers(ID3D11Device* device)
 {
 	HRESULT result;
 	D3D11_BUFFER_DESC matrixBufferDesc, eyeBufferDesc, factorBufferDesc;
-	VertexInputType* vertices = nullptr;
+	MarchingCubeVertexInputType* vertices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData;
 
@@ -438,7 +468,7 @@ bool GeometryData::InitializeBuffers(ID3D11Device* device)
 		
 		// Set up the description of the static vertex buffer.
 		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.ByteWidth = sizeof(VertexInputType) * m_vertexCount;
+		vertexBufferDesc.ByteWidth = sizeof(MarchingCubeVertexInputType) * m_vertexCount;
 		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		vertexBufferDesc.CPUAccessFlags = 0;
 		vertexBufferDesc.MiscFlags = 0;
@@ -515,36 +545,100 @@ bool GeometryData::InitializeBuffers(ID3D11Device* device)
 
 }
 
-bool GeometryData::InitializeShaders(ID3D11Device* device, WCHAR* vertexFilename, WCHAR* geometryFilename, WCHAR* pixelFilename)
+bool GeometryData::InitializeShaders(ID3D11Device* device)
 {
-	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
+	{
+		D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 
-	//Vertex Input Layout Description
-	//needs to mach VertexInputType
-	polygonLayout[0].SemanticName = "POSITION";
-	polygonLayout[0].SemanticIndex = 0;
-	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	polygonLayout[0].InputSlot = 0;
-	polygonLayout[0].AlignedByteOffset = 0;
-	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	polygonLayout[0].InstanceDataStepRate = 0;
+		//Vertex Input Layout Description
+		//needs to mach MarchingCubeVertexInputType
+		polygonLayout[0].SemanticName = "SV_POSITION";
+		polygonLayout[0].SemanticIndex = 0;
+		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[0].InputSlot = 0;
+		polygonLayout[0].AlignedByteOffset = 0;
+		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[0].InstanceDataStepRate = 0;
 
-	polygonLayout[1].SemanticName = "COLOR";
-	polygonLayout[1].SemanticIndex = 0;
-	polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	polygonLayout[1].InputSlot = 0;
-	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	polygonLayout[1].InstanceDataStepRate = 0;
+		polygonLayout[1].SemanticName = "COLOR";
+		polygonLayout[1].SemanticIndex = 0;
+		polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[1].InputSlot = 0;
+		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[1].InstanceDataStepRate = 0;
 
-	vs = new VertexShader();
-	vs->Initialize(device, vertexFilename, polygonLayout);
+		UINT numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
-	ps = new PixelShader();
-	ps->Initialize(device, pixelFilename);
+		marchingCubeVS = new VertexShader();
+		marchingCubeVS->Initialize(device, L"MarchingCube_VS.hlsl", polygonLayout, numElements);
+	}
 
-	gs = new GeometryShader();
-	gs->Initialize(device, geometryFilename);
+	{
+		D3D11_INPUT_ELEMENT_DESC polygonLayout[4];
+
+		//Vertex Input Layout Description
+		//needs to mach VertexInputType
+		polygonLayout[0].SemanticName = "SV_POSITION";
+		polygonLayout[0].SemanticIndex = 0;
+		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[0].InputSlot = 0;
+		polygonLayout[0].AlignedByteOffset = 0;
+		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[0].InstanceDataStepRate = 0;
+
+		polygonLayout[1].SemanticName = "POSITION";
+		polygonLayout[1].SemanticIndex = 0;
+		polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[1].InputSlot = 0;
+		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[1].InstanceDataStepRate = 0;
+
+		polygonLayout[2].SemanticName = "COLOR";
+		polygonLayout[2].SemanticIndex = 0;
+		polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[2].InputSlot = 0;
+		polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[2].InstanceDataStepRate = 0;
+
+		polygonLayout[3].SemanticName = "NORMAL";
+		polygonLayout[3].SemanticIndex = 0;
+		polygonLayout[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[3].InputSlot = 0;
+		polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[3].InstanceDataStepRate = 0;
+
+		UINT numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+
+		geometryVS = new VertexShader();
+		geometryVS->Initialize(device, L"Geometry_VS.hlsl", polygonLayout, numElements);
+	}
+
+	triplanarDisplacementPS = new PixelShader();
+	triplanarDisplacementPS->Initialize(device, L"Triplanar_Displacement_PS.hlsl");
+
+	D3D11_BUFFER_DESC bufferDesc = {};
+
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.BindFlags = D3D11_BIND_STREAM_OUTPUT | D3D11_BIND_VERTEX_BUFFER; // Wichtig ist du musst beide Flags setzen, einmal für Output und einmal für vertex buffer.
+	bufferDesc.CPUAccessFlags = 0;
+	bufferDesc.MiscFlags = 0;
+	bufferDesc.StructureByteStride = 0;
+	bufferDesc.ByteWidth = 10 * 1024 * 1024;
+
+	D3D11_SO_DECLARATION_ENTRY declarationEntry[] =
+	{
+		{ 0, "SV_POSITION", 0, 0, 4, 0 },
+		{ 0, "POSITION", 0, 0, 4, 0 },
+		{ 0, "COLOR", 0, 0, 4, 0 },
+		{ 0, "NORMAL", 0, 0, 4, 0 },
+	};
+
+	marchingCubeGSO = new GeometryOutputShader();
+	marchingCubeGSO->Initialize(device, L"MarchingCube_GS.hlsl", bufferDesc, declarationEntry, _countof(declarationEntry));
 
 	return true;
 }
@@ -753,30 +847,20 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 {
 	SetBufferData(deviceContext, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
 
-	unsigned int stride;
-	unsigned int offset;
+	UINT offset = 0, stride = sizeof(VertexInputType);
 
-	// Set vertex buffer stride and offset.
-	stride = sizeof(VertexInputType);
-	offset = 0;
+	if(!isGeometryGenerated)
+	{
+		MarchingCubeRenderpass(deviceContext);	
+		return;
+	}
 
 	//Set Shaders
-	vs->Set(deviceContext);
-	gs->Set(deviceContext);
-	ps->Set(deviceContext);
+	geometryVS->Set(deviceContext);
+	triplanarDisplacementPS->Set(deviceContext);
 
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
-
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-	//Density Map to use
-	deviceContext->GSSetShaderResources(0, 1, &m_densityMap);
-	deviceContext->GSSetShaderResources(1, 1, &m_triangleLUT);
-	//Set point sampler to use in the geometry shader
-	deviceContext->GSSetSamplers(0, 1, &m_densitySampler);
-	deviceContext->GSSetConstantBuffers(1, 1, &m_decalDescriptionBuffer);
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContext->IASetVertexBuffers(0, 1, &marchingCubeGSO->outputBuffer, &stride, &offset);
 
 	deviceContext->PSSetShaderResources(0, 2, m_colorTextures[0]->GetTextureViewArray());
 	deviceContext->PSSetShaderResources(2, 2, m_colorTextures[1]->GetTextureViewArray());
@@ -785,14 +869,13 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 	deviceContext->PSSetSamplers(0, 1, &m_wrapSampler);
 	deviceContext->PSSetSamplers(1, 1, &m_clampSampler);
 
-	//Set constant buffer
 	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
-	deviceContext->GSSetConstantBuffers(0, 1, &matrixBuffer);
+	//Set constant buffer
 	deviceContext->PSSetConstantBuffers(0, 1, &matrixBuffer);
 	deviceContext->PSSetConstantBuffers(2, 1, &eyeBuffer);
 	deviceContext->PSSetConstantBuffers(3, 1, &factorBuffer);
 
-	deviceContext->Draw(m_vertexCount, 0);
+	deviceContext->DrawAuto();
 
 }
 

@@ -8,7 +8,7 @@ public:
 	VertexShader();
 	~VertexShader();
 
-	bool Initialize(ID3D11Device* device, WCHAR* filename, D3D11_INPUT_ELEMENT_DESC* polygonLayout);
+	bool Initialize(ID3D11Device* device, WCHAR* filename, D3D11_INPUT_ELEMENT_DESC* polygonLayout, UINT layoutCount);
 	void Set(ID3D11DeviceContext* context);
 
 private:

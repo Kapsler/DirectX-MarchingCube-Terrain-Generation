@@ -9,7 +9,7 @@ struct PixelInputType
 {
     float4 position : SV_POSITION;
     float4 worldPos : POSITION;
-    float4 color : COLOR0;
+    float4 color : COLOR;
     float4 normal : NORMAL;
 };
 
@@ -99,8 +99,9 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
 {
         // Determine the blend weights for the 3 planar projections.  
     // N_orig is the vertex-interpolated normal vector.  
-    float3 blend_weights = abs(input.normal.xyz); // Tighten up the blending zone: 4
     bool useDisplacement = false;
+
+    float3 blend_weights = abs(input.normal.xyz); // Tighten up the blending zone: 4
     blend_weights = (blend_weights - 0.2) * 7;
     blend_weights = max(blend_weights, 0); // Force weights to sum to 1.0 (very important!)  
     blend_weights /= (blend_weights.x + blend_weights.y + blend_weights.z).xxx;
@@ -174,7 +175,7 @@ float4 main(PixelInputType input) : SV_TARGET
     float4 ambient = float4(0.3f, 0.3f, 0.3f, 1.0f);
     ////float4 ambient = float4(0.0f, 0.0f, 0.0f, 1.0f);
     float4 diffuse = float4(1.0f, 1.0f, 1.0f, 1.0f);
-    float4 lightPos = (100.0f, 200.0f, 500.0f, 1.0f);
+    float4 lightPos = float4(100.0f, 200.0f, 500.0f, 1.0f);
     float4 finalColor = ambient;
 
     //Get Viewing Direction

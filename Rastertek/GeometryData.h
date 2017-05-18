@@ -8,6 +8,7 @@
 #include "VertexShader.h"
 #include "GeometryShader.h"
 #include "PixelShader.h"
+#include "GeometryOutputShader.h"
 
 class GeometryData
 {
@@ -62,6 +63,14 @@ private:
 
 	struct VertexInputType
 	{
+		DirectX::XMFLOAT4 position;
+		DirectX::XMFLOAT4 worldPos;
+		DirectX::XMFLOAT4 color;
+		DirectX::XMFLOAT4 normal;
+	};
+
+	struct MarchingCubeVertexInputType
+	{
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT4 color;
 	};
@@ -82,9 +91,9 @@ private:
 	void GenerateHelixStructure();
 
 	bool SetBufferData(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor);
-	int GetVertices(VertexInputType** outVertices);
+	int GetVertices(MarchingCubeVertexInputType** outVertices);
 	bool InitializeBuffers(ID3D11Device* device);
-	bool InitializeShaders(ID3D11Device* device, WCHAR* vertexFilename, WCHAR* geometryFilename, WCHAR* pixelFilename);
+	bool InitializeShaders(ID3D11Device* device);
 	D3D11_TEXTURE3D_DESC CreateTextureDesc() const;
 	D3D11_SUBRESOURCE_DATA CreateSubresourceData() const;
 	ID3D11Texture3D* CreateTexture(ID3D11Device* device, D3D11_TEXTURE3D_DESC texDesc, D3D11_SUBRESOURCE_DATA subData) const;
@@ -95,6 +104,7 @@ private:
 	void GenerateDecalDescriptionBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	DecalDescription GetDecals() const;
 	void LoadTextures(ID3D11Device* device);
+	void MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext);
 
 	D3D11_TEXTURE3D_DESC m_texDesc;
 	D3D11_SUBRESOURCE_DATA m_subData;
@@ -106,14 +116,14 @@ private:
 	ID3D11Buffer* m_decalDescriptionBuffer = nullptr;
 	ID3D11Buffer* matrixBuffer, *eyeBuffer, *factorBuffer;
 
-	VertexShader* vs;
-	PixelShader* ps;
-	GeometryShader* gs;
+	VertexShader* marchingCubeVS, *geometryVS;
+	PixelShader* triplanarDisplacementPS;
+	GeometryOutputShader* marchingCubeGSO;
 
 	//Textures
 	TextureClass* m_colorTextures[3] = {nullptr};
 
-
+	bool isGeometryGenerated = false;
 	float* m_data;
 	unsigned int m_width, m_height, m_depth;
 	unsigned int m_vertexCount;

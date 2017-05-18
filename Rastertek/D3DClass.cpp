@@ -294,7 +294,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	rasterizerDescription.DepthBias = 0;
 	rasterizerDescription.DepthBiasClamp = 0.0f;
 	rasterizerDescription.DepthClipEnable = true;
-	rasterizerDescription.FillMode = D3D11_FILL_WIREFRAME;
+	rasterizerDescription.FillMode = D3D11_FILL_SOLID;
 	rasterizerDescription.FrontCounterClockwise = false;
 	rasterizerDescription.MultisampleEnable = true;
 	rasterizerDescription.ScissorEnable = false;

@@ -66,6 +66,9 @@
     <ClCompile Include="VertexShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GeometryOutputShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SystemClass.h">
@@ -128,13 +131,17 @@
     <ClInclude Include="VertexShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GeometryOutputShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DepthVertexShader.hlsl" />
     <FxCompile Include="DepthPixelShader.hlsl" />
     <FxCompile Include="MarchingCube_GS.hlsl" />
     <FxCompile Include="MarchingCube_VS.hlsl" />
-    <FxCompile Include="MarchingCube_PS.hlsl" />
+    <FxCompile Include="Triplanar_Displacement_PS.hlsl" />
+    <FxCompile Include="Geometry_VS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -20,7 +20,7 @@ VertexShader::~VertexShader()
 	}
 }
 
-bool VertexShader::Initialize(ID3D11Device* device, WCHAR* filename, D3D11_INPUT_ELEMENT_DESC* polygonLayout)
+bool VertexShader::Initialize(ID3D11Device* device, WCHAR* filename, D3D11_INPUT_ELEMENT_DESC* polygonLayout, UINT layoutCount)
 {
 	HRESULT result;
 	ID3DBlob* errorMessage;
@@ -58,9 +58,7 @@ bool VertexShader::Initialize(ID3D11Device* device, WCHAR* filename, D3D11_INPUT
 		return false;
 	}
 
-	unsigned int numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
-
-	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), &layout);
+	result = device->CreateInputLayout(polygonLayout, layoutCount, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), &layout);
 	if (FAILED(result))
 	{
 		return false;
