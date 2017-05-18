@@ -150,10 +150,7 @@ void main(
             v0.worldPos = getWorldPos(v0.position);
             v1.worldPos = getWorldPos(v1.position);
             v2.worldPos = getWorldPos(v2.position);
-            //v0.worldPos = v0.position;
-            //v1.worldPos = v1.position;
-            //v2.worldPos = v2.position;
-            
+
             //Calculate Normals
             v0.normal.xyz = calculateNormal(v0.position.xyz);
             v1.normal.xyz = calculateNormal(v1.position.xyz);
@@ -161,11 +158,6 @@ void main(
             v0.normal.w = 1.0f;
             v1.normal.w = 1.0f;
             v2.normal.w = 1.0f;
-
-            ////Get Final Pos
-            //v0.position = getProjectionPosition(v0.position);
-            //v1.position = getProjectionPosition(v1.position);
-            //v2.position = getProjectionPosition(v2.position);
 
             //Output Vertices
             output.Append(v0);

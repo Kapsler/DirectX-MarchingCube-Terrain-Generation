@@ -14,6 +14,11 @@ GeometryOutputShader::~GeometryOutputShader()
 		geometryShader->Release();
 		geometryShader = nullptr;
 	}
+	if(outputBuffer)
+	{
+		outputBuffer->Release();
+		outputBuffer = nullptr;
+	}
 }
 
 bool GeometryOutputShader::Initialize(ID3D11Device* device, WCHAR* filename, D3D11_BUFFER_DESC bufferDesc, D3D11_SO_DECLARATION_ENTRY* declarationEntry, UINT declarationEntryCount)

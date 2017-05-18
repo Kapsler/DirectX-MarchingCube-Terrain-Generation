@@ -5,7 +5,7 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	: m_width(width), m_height(height), m_depth(depth)
 {
 
-	m_cubeSize = DirectX::XMFLOAT3(64.0f, 64.0f, 64.0f);
+	m_cubeSize = DirectX::XMFLOAT3(128.0f, 128.0f, 128.0f);
 	//2.0f to decrease density
 	m_cubeStep = DirectX::XMFLOAT3(2.0f / m_cubeSize.x, 2.0f / m_cubeSize.y, 2.0f / m_cubeSize.z);
 	worldMatrix = DirectX::XMMatrixIdentity();
@@ -51,6 +51,7 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 
 GeometryData::~GeometryData()
 {
+
 	if (m_vertexBuffer)
 	{
 		m_vertexBuffer->Release();
@@ -97,6 +98,30 @@ GeometryData::~GeometryData()
 	}
 
 	delete m_data;
+
+	if (marchingCubeVS)
+	{
+		delete marchingCubeVS;
+		marchingCubeVS = nullptr;
+	}
+
+	if (marchingCubeGSO)
+	{
+		delete marchingCubeGSO;
+		marchingCubeGSO = nullptr;
+	}
+
+	if (triplanarDisplacementPS)
+	{
+		delete triplanarDisplacementPS;
+		triplanarDisplacementPS = nullptr;
+	}
+
+	if (geometryVS)
+	{
+		delete geometryVS;
+		geometryVS = nullptr;
+	}
 }
 
 void GeometryData::GenerateCubeData()
@@ -339,7 +364,7 @@ void GeometryData::LoadTextures(ID3D11Device* device)
 
 	m_colorTextures[0] = rock1;
 	m_colorTextures[1] = rock2;
-	m_colorTextures[2] = brick;
+	m_colorTextures[2] = rock3;
 }
 
 void GeometryData::MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext)
@@ -627,7 +652,7 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 	bufferDesc.CPUAccessFlags = 0;
 	bufferDesc.MiscFlags = 0;
 	bufferDesc.StructureByteStride = 0;
-	bufferDesc.ByteWidth = 10 * 1024 * 1024;
+	bufferDesc.ByteWidth = 100 * 1024 * 1024;
 
 	D3D11_SO_DECLARATION_ENTRY declarationEntry[] =
 	{
