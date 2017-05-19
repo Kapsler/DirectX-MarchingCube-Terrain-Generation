@@ -13,7 +13,7 @@ namespace ShaderUtility
 		compileErrors = static_cast<char*>(errorMessage->GetBufferPointer());
 		bufferSize = errorMessage->GetBufferSize();
 
-		printf("Error compiling shader %ls", shaderFilename);
+		printf("Error compiling shader %ls\n\r", shaderFilename);
 
 		fout.open("shader-error.txt");
 		for (auto i = 0; i<bufferSize; i++)

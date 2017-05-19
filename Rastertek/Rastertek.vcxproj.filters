@@ -146,6 +146,9 @@
     <ClInclude Include="GeometryDoubleBufferShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderUtility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DepthVertexShader.hlsl" />
@@ -155,8 +158,9 @@
     <FxCompile Include="Triplanar_Displacement_PS.hlsl" />
     <FxCompile Include="Geometry_VS.hlsl" />
     <FxCompile Include="Particle_VS.hlsl" />
-    <FxCompile Include="ParticleAttributes_GS.hlsl" />
     <FxCompile Include="ParticleRender_GS.hlsl" />
+    <FxCompile Include="ParticleUpdate_GS.hlsl" />
+    <FxCompile Include="Particle_PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -646,15 +646,16 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 	triplanarDisplacementPS = new PixelShader();
 	triplanarDisplacementPS->Initialize(device, L"Triplanar_Displacement_PS.hlsl");
 
-	D3D11_BUFFER_DESC bufferDesc = {};
 
-	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.BindFlags = D3D11_BIND_STREAM_OUTPUT | D3D11_BIND_VERTEX_BUFFER; // Wichtig ist du musst beide Flags setzen, einmal für Output und einmal für vertex buffer.
-	bufferDesc.CPUAccessFlags = 0;
-	bufferDesc.MiscFlags = 0;
-	bufferDesc.StructureByteStride = 0;
-	bufferDesc.ByteWidth = 10 * 1024 * 1024;
 	{
+		D3D11_BUFFER_DESC bufferDesc = {};
+
+		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		bufferDesc.BindFlags = D3D11_BIND_STREAM_OUTPUT | D3D11_BIND_VERTEX_BUFFER; // Wichtig ist du musst beide Flags setzen, einmal für Output und einmal für vertex buffer.
+		bufferDesc.CPUAccessFlags = 0;
+		bufferDesc.MiscFlags = 0;
+		bufferDesc.StructureByteStride = 0;
+		bufferDesc.ByteWidth = 10 * 1024 * 1024;
 
 		D3D11_SO_DECLARATION_ENTRY declarationEntry[4];
 

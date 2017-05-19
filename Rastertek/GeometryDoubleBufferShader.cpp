@@ -102,3 +102,10 @@ void GeometryDoubleBufferShader::Set(ID3D11DeviceContext* context)
 	//Setting shader
 	context->GSSetShader(geometryShader, nullptr, 0);
 }
+
+void GeometryDoubleBufferShader::BufferSwap()
+{
+	ID3D11Buffer* tmp = inputBuffer;
+	inputBuffer = outputBuffer;
+	outputBuffer = tmp;
+}

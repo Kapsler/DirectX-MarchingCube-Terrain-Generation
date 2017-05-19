@@ -443,7 +443,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	light->GetProjectionMatrix(lightProjectionMatrix);
 	
 	//Render Geometry
-	terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
+	//terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
 
 	//Render Particles
 	particles->Render(direct3D->GetDeviceContext());
