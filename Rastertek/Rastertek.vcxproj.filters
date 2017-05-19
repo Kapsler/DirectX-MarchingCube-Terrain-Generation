@@ -69,6 +69,12 @@
     <ClCompile Include="GeometryOutputShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ParticleSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeometryDoubleBufferShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SystemClass.h">
@@ -134,6 +140,12 @@
     <ClInclude Include="GeometryOutputShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometryDoubleBufferShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DepthVertexShader.hlsl" />
@@ -142,6 +154,9 @@
     <FxCompile Include="MarchingCube_VS.hlsl" />
     <FxCompile Include="Triplanar_Displacement_PS.hlsl" />
     <FxCompile Include="Geometry_VS.hlsl" />
+    <FxCompile Include="Particle_VS.hlsl" />
+    <FxCompile Include="ParticleAttributes_GS.hlsl" />
+    <FxCompile Include="ParticleRender_GS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

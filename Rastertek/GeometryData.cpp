@@ -395,6 +395,7 @@ void GeometryData::MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext)
 
 	deviceContext->SOSetTargets(0, nullptr, nullptr);
 	isGeometryGenerated = true;
+	deviceContext->GSSetShader(nullptr, nullptr, 0);
 }
 
 void GeometryData::GenerateNoiseData()
@@ -902,7 +903,6 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 	{
 		SetBufferData(deviceContext, XMMatrixIdentity(), viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
 		MarchingCubeRenderpass(deviceContext);	
-		return;
 	}
 
 	SetBufferData(deviceContext, worldMatrix, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);

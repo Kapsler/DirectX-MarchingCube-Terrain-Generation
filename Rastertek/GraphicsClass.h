@@ -14,6 +14,7 @@
 #include <CommonStates.h>
 #include "PerformanceTimer.h"
 #include "GeometryData.h"
+#include "ParticleSystem.h"
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
@@ -85,4 +86,5 @@ private:
 	ID3D11InputLayout* inputLayout;
 	
 	GeometryData* terrain = nullptr;
+	ParticleSystem* particles = nullptr;
 };

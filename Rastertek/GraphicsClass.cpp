@@ -5,7 +5,6 @@
 #include <string>
 #include <iostream>
 #include "modelclass.h"
-#include "GeometryData.h"
 
 GraphicsClass::GraphicsClass()
 {
@@ -96,6 +95,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
 
 	RegenrateTerrain();
+
+	particles = new ParticleSystem(direct3D->GetDevice());
 	//HARDCODED END
 
 	//Create RenderToTexture
@@ -444,13 +445,16 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	//Render Geometry
 	terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
 
+	//Render Particles
+	particles->Render(direct3D->GetDeviceContext());
+
 	//Text
 	ID3D11DepthStencilState* depthstate;
 	ID3D11RasterizerState* rsstate;
 	direct3D->GetDeviceContext()->OMGetDepthStencilState(&depthstate, nullptr);
 	direct3D->GetDeviceContext()->RSGetState(&rsstate);
 	direct3D->GetDeviceContext()->GSSetShader(nullptr, nullptr, 0);
-	m_spriteBatch->Begin(SpriteSortMode_Deferred, nullptr, nullptr, depthstate, rsstate);
+	m_spriteBatch->Begin(SpriteSortMode_BackToFront, nullptr, nullptr, depthstate, rsstate);
 
 	RenderText(".", Vector2(currentScreenWidth / 2.0f, currentScreenHeight / 2.0f), true);
 	RenderText("FPS: " + std::to_string(static_cast<int>(fps)), fpsPos, false);
