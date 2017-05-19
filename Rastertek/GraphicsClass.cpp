@@ -710,5 +710,6 @@ void GraphicsClass::RegenrateTerrain()
 	delete terrain;
 
 	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext());
+	terrain->worldMatrix = XMMatrixIdentity() * XMMatrixScaling(5.0f, 5.0f, 5.0f);
 	//terrain->DebugPrint();
 }

@@ -22,7 +22,7 @@ GSInputType main(VertexInputType input)
     GSInputType output;
 
 	// Change the position vector to be 4 units for proper matrix calculations.
-    output.position = float4(input.position, 1.0f);
+    output.position = float4(input.position.xyz, 1.0f);
 
 	// Store the input color for the pixel shader to use.
 	output.color = input.color;

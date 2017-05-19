@@ -165,7 +165,7 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
                    bump2.xyz * blend_weights.yyy +
                    bump3.xyz * blend_weights.zzz;
 
-
+    blended_color.w = 1.0f;
 }
 
 float4 main(PixelInputType input) : SV_TARGET
@@ -206,6 +206,7 @@ float4 main(PixelInputType input) : SV_TARGET
     finalColor = saturate(finalColor);
 
     finalColor = finalColor * blended_color;
+    finalColor.w = 1.0f;
 
     return finalColor;
 }

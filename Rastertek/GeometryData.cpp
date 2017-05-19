@@ -5,7 +5,7 @@ GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, Terr
 	: m_width(width), m_height(height), m_depth(depth)
 {
 
-	m_cubeSize = DirectX::XMFLOAT3(128.0f, 128.0f, 128.0f);
+	m_cubeSize = DirectX::XMFLOAT3(64.0f, 64.0f, 64.0f);
 	//2.0f to decrease density
 	m_cubeStep = DirectX::XMFLOAT3(2.0f / m_cubeSize.x, 2.0f / m_cubeSize.y, 2.0f / m_cubeSize.z);
 	worldMatrix = DirectX::XMMatrixIdentity();
@@ -276,7 +276,7 @@ void GeometryData::GenerateHelixStructure()
 	}
 }
 
-bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
+bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX world, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -285,7 +285,7 @@ bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX viewMatr
 	FactorBufferType* factorData;
 
 	//DirectX11 need matrices transposed!
-	XMMATRIX world = XMMatrixTranspose(worldMatrix);
+	XMMATRIX worldM = XMMatrixTranspose(world);
 	viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
@@ -603,10 +603,10 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 		D3D11_INPUT_ELEMENT_DESC polygonLayout[4];
 
 		//Vertex Input Layout Description
-		//needs to mach VertexInputType
+		//needs to mach GeometryVertexInputType
 		polygonLayout[0].SemanticName = "SV_POSITION";
 		polygonLayout[0].SemanticIndex = 0;
-		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		polygonLayout[0].InputSlot = 0;
 		polygonLayout[0].AlignedByteOffset = 0;
 		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -614,7 +614,7 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 
 		polygonLayout[1].SemanticName = "POSITION";
 		polygonLayout[1].SemanticIndex = 0;
-		polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		polygonLayout[1].InputSlot = 0;
 		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -622,7 +622,7 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 
 		polygonLayout[2].SemanticName = "COLOR";
 		polygonLayout[2].SemanticIndex = 0;
-		polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[2].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		polygonLayout[2].InputSlot = 0;
 		polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 		polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -630,7 +630,7 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 
 		polygonLayout[3].SemanticName = "NORMAL";
 		polygonLayout[3].SemanticIndex = 0;
-		polygonLayout[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		polygonLayout[3].InputSlot = 0;
 		polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 		polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -652,18 +652,44 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 	bufferDesc.CPUAccessFlags = 0;
 	bufferDesc.MiscFlags = 0;
 	bufferDesc.StructureByteStride = 0;
-	bufferDesc.ByteWidth = 100 * 1024 * 1024;
-
-	D3D11_SO_DECLARATION_ENTRY declarationEntry[] =
+	bufferDesc.ByteWidth = 10 * 1024 * 1024;
 	{
-		{ 0, "SV_POSITION", 0, 0, 4, 0 },
-		{ 0, "POSITION", 0, 0, 4, 0 },
-		{ 0, "COLOR", 0, 0, 4, 0 },
-		{ 0, "NORMAL", 0, 0, 4, 0 },
-	};
 
-	marchingCubeGSO = new GeometryOutputShader();
-	marchingCubeGSO->Initialize(device, L"MarchingCube_GS.hlsl", bufferDesc, declarationEntry, _countof(declarationEntry));
+		D3D11_SO_DECLARATION_ENTRY declarationEntry[4];
+
+		declarationEntry[0].ComponentCount = 4;
+		declarationEntry[0].SemanticIndex = 0;
+		declarationEntry[0].SemanticName = "SV_POSITION";
+		declarationEntry[0].OutputSlot = 0;
+		declarationEntry[0].StartComponent = 0;
+		declarationEntry[0].Stream = 0;
+
+		declarationEntry[1].ComponentCount = 4;
+		declarationEntry[1].SemanticIndex = 0;
+		declarationEntry[1].SemanticName = "POSITION";
+		declarationEntry[1].OutputSlot = 0;
+		declarationEntry[1].StartComponent = 0;
+		declarationEntry[1].Stream = 0;
+
+		declarationEntry[2].ComponentCount = 4;
+		declarationEntry[2].SemanticIndex = 0;
+		declarationEntry[2].SemanticName = "COLOR";
+		declarationEntry[2].OutputSlot = 0;
+		declarationEntry[2].StartComponent = 0;
+		declarationEntry[2].Stream = 0;
+
+		declarationEntry[3].ComponentCount = 4;
+		declarationEntry[3].SemanticIndex = 0;
+		declarationEntry[3].SemanticName = "NORMAL";
+		declarationEntry[3].OutputSlot = 0;
+		declarationEntry[3].StartComponent = 0;
+		declarationEntry[3].Stream = 0;
+
+		UINT numElements = sizeof(declarationEntry) / sizeof(declarationEntry[0]);
+
+		marchingCubeGSO = new GeometryOutputShader();
+		marchingCubeGSO->Initialize(device, L"MarchingCube_GS.hlsl", bufferDesc, declarationEntry, numElements);
+	}
 
 	return true;
 }
@@ -870,16 +896,17 @@ void GeometryData::DebugPrint()
 
 void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
 {
-	SetBufferData(deviceContext, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
 
 
 	if(!isGeometryGenerated)
 	{
+		SetBufferData(deviceContext, XMMatrixIdentity(), viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
 		MarchingCubeRenderpass(deviceContext);	
 		return;
 	}
 
-	UINT offset = 0, stride = sizeof(VertexInputType);
+	SetBufferData(deviceContext, worldMatrix, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
+	UINT offset = 0, stride = sizeof(GeometryVertexInputType);
 
 	//Set Shaders
 	geometryVS->Set(deviceContext);

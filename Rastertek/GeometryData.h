@@ -61,7 +61,7 @@ private:
 		float padding;
 	};
 
-	struct VertexInputType
+	struct GeometryVertexInputType
 	{
 		DirectX::XMFLOAT4 position;
 		DirectX::XMFLOAT4 worldPos;
@@ -90,7 +90,7 @@ private:
 	void GenerateBumpySphere();
 	void GenerateHelixStructure();
 
-	bool SetBufferData(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor);
+	bool SetBufferData(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor);
 	int GetVertices(MarchingCubeVertexInputType** outVertices);
 	bool InitializeBuffers(ID3D11Device* device);
 	bool InitializeShaders(ID3D11Device* device);

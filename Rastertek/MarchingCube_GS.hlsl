@@ -84,7 +84,7 @@ int checkTriangleLUT(int i, int j)
 
 [maxvertexcount(18)]
 void main(
-	point GSInput input[1] : SV_POSITION, 
+	point GSInput input[1], 
 	inout TriangleStream<GSOuput> output
 )
 {
@@ -137,9 +137,9 @@ void main(
         for (int i = 0; checkTriangleLUT(cubeindex, i) != -1; i += 3)
         {
             //Set Color
-            v0.color = color;
-            v1.color = color;
-            v2.color = color;
+            v0.color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+            v1.color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+            v2.color = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
             //Get Case from LUT
             v0.position = float4(vertlist[checkTriangleLUT(cubeindex, i + 0)], 1);
@@ -152,9 +152,9 @@ void main(
             v2.worldPos = getWorldPos(v2.position);
 
             //Calculate Normals
-            v0.normal.xyz = calculateNormal(v0.position.xyz);
-            v1.normal.xyz = calculateNormal(v1.position.xyz);
-            v2.normal.xyz = calculateNormal(v2.position.xyz);
+            v0.normal.xyz = calculateNormal(v0.worldPos.xyz);
+            v1.normal.xyz = calculateNormal(v1.worldPos.xyz);
+            v2.normal.xyz = calculateNormal(v2.worldPos.xyz);
             v0.normal.w = 1.0f;
             v1.normal.w = 1.0f;
             v2.normal.w = 1.0f;
