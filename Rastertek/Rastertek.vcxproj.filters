@@ -157,10 +157,11 @@
     <FxCompile Include="MarchingCube_VS.hlsl" />
     <FxCompile Include="Triplanar_Displacement_PS.hlsl" />
     <FxCompile Include="Geometry_VS.hlsl" />
-    <FxCompile Include="Particle_VS.hlsl" />
     <FxCompile Include="ParticleRender_GS.hlsl" />
     <FxCompile Include="ParticleUpdate_GS.hlsl" />
     <FxCompile Include="Particle_PS.hlsl" />
+    <FxCompile Include="ParticleUpdate_VS.hlsl" />
+    <FxCompile Include="ParticleRender_VS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

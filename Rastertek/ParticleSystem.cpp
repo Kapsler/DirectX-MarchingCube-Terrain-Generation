@@ -4,6 +4,7 @@ ParticleSystem::ParticleSystem(ID3D11Device* device)
 {
 	InitializeShaders(device);
 	InitializeBuffers(device);
+	worldMatrix = DirectX::XMMatrixIdentity();
 }
 
 ParticleSystem::ParticleSystem(const ParticleSystem& other)
@@ -16,8 +17,10 @@ ParticleSystem::~ParticleSystem()
 
 }
 
+
 void ParticleSystem::InitializeShaders(ID3D11Device* device)
 {
+	//ParticleUpdate VS
 	{
 		D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 
@@ -40,10 +43,38 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 
 		UINT numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
-		vs = new VertexShader();
-		vs->Initialize(device, L"Particle_VS.hlsl", polygonLayout, numElements);
+		particleUpdateVS = new VertexShader();
+		particleUpdateVS->Initialize(device, L"ParticleUpdate_VS.hlsl", polygonLayout, numElements);
 	}
 
+	//ParticleVisuals VS
+	{
+		D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
+
+		//Vertex Input Layout Description - ParticleAttributes
+		polygonLayout[0].SemanticName = "SV_POSITION";
+		polygonLayout[0].SemanticIndex = 0;
+		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		polygonLayout[0].InputSlot = 0;
+		polygonLayout[0].AlignedByteOffset = 0;
+		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[0].InstanceDataStepRate = 0;
+
+		polygonLayout[1].SemanticName = "TYPE";
+		polygonLayout[1].SemanticIndex = 0;
+		polygonLayout[1].Format = DXGI_FORMAT_R32_UINT;
+		polygonLayout[1].InputSlot = 0;
+		polygonLayout[1].AlignedByteOffset = 0;
+		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[1].InstanceDataStepRate = 0;
+
+		UINT numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+
+		particleVisualsVS = new VertexShader();
+		particleVisualsVS->Initialize(device, L"ParticleRender_VS.hlsl", polygonLayout, numElements);
+	}
+
+	//ParticleUpdate GS
 	{
 		
 		D3D11_BUFFER_DESC bufferDesc;
@@ -79,52 +110,83 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 		particleUpdateGS->Initialize(device, L"ParticleUpdate_GS.hlsl", bufferDesc, declarationEntry, numElements);
 	}
 
+	//ParticleVisuals GS
 	{
 		particleVisualsGS = new GeometryShader();
 		particleVisualsGS->Initialize(device, L"ParticleRender_GS.hlsl");
 	}
 
+	//ParticleVisuals PS
 	{
 		ps = new PixelShader();
 		ps->Initialize(device, L"Particle_PS.hlsl");
 	}
 }
 
-void ParticleSystem::InitializeBuffers(ID3D11Device* device)
+bool ParticleSystem::InitializeBuffers(ID3D11Device* device)
 {
+	HRESULT result;
+
 	// VertexBuffer
-	
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	D3D11_SUBRESOURCE_DATA vertexData;
-	ParticleAttributes* vertices;
+	{
+		
+		D3D11_BUFFER_DESC vertexBufferDesc;
+		D3D11_SUBRESOURCE_DATA vertexData;
+		ParticleAttributes* vertices;
 
-	vertices = new ParticleAttributes[1];
-	vertices[0].position = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	vertices[0].type = 1;
+		vertices = new ParticleAttributes[1];
+		vertices[0].position = DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+		vertices[0].type = 0;
 
-	// Set the number of vertices in the vertex array.
-	UINT vertexCount = 1;
+		// Set the number of vertices in the vertex array.
+		UINT vertexCount = 1;
 
-	// Set up the description of the static vertex buffer.
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(ParticleAttributes) * vertexCount;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
+		// Set up the description of the static vertex buffer.
+		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		vertexBufferDesc.ByteWidth = sizeof(ParticleAttributes) * vertexCount;
+		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vertexBufferDesc.CPUAccessFlags = 0;
+		vertexBufferDesc.MiscFlags = 0;
+		vertexBufferDesc.StructureByteStride = 0;
 
-	// Give the subresource structure a pointer to the vertex data.
-	vertexData.pSysMem = vertices;
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
+		// Give the subresource structure a pointer to the vertex data.
+		vertexData.pSysMem = vertices;
+		vertexData.SysMemPitch = 0;
+		vertexData.SysMemSlicePitch = 0;
 
-	// Now create the vertex buffer.
-	device->CreateBuffer(&vertexBufferDesc, &vertexData, &kickstartVertexBuffer);
+		// Now create the vertex buffer.
+		result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &kickstartVertexBuffer);
+		if (FAILED(result))
+		{
+			return false;
+		}
 
-	// Release the arrays now that the vertex and index buffers have been created and loaded.
-	delete[] vertices;
-	vertices = nullptr;
-	
+		// Release the arrays now that the vertex and index buffers have been created and loaded.
+		delete[] vertices;
+		vertices = nullptr;
+	}
+
+	//Matrix Constant Buffer
+	{
+		D3D11_BUFFER_DESC matrixBufferDesc;
+
+		//Setup matrix Buffer Description
+		matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+		matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		matrixBufferDesc.MiscFlags = 0;
+		matrixBufferDesc.StructureByteStride = 0;
+
+		//Make Buffer accessible
+		result = device->CreateBuffer(&matrixBufferDesc, nullptr, &matrixBuffer);
+		if (FAILED(result))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void ParticleSystem::Kickstart(ID3D11DeviceContext* context)
@@ -136,7 +198,7 @@ void ParticleSystem::Kickstart(ID3D11DeviceContext* context)
 	UINT offset = 0, stride = sizeof(ParticleAttributes);
 
 	//Set Pixelshader
-	vs->Set(context);
+	particleUpdateVS->Set(context);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	//First Renderpass for Update
@@ -144,38 +206,79 @@ void ParticleSystem::Kickstart(ID3D11DeviceContext* context)
 	context->SOSetTargets(1, &particleUpdateGS->outputBuffer, &offset);
 	context->IASetVertexBuffers(0, 1, &kickstartVertexBuffer, &stride, &offset);
 
-	context->DrawAuto();
+	context->Draw(1, 0);
 	context->GSSetShader(nullptr, nullptr, 0);
 	context->SOSetTargets(0, nullptr, nullptr);
 
 	isWarmedUp = true;
 }
 
-void ParticleSystem::Render(ID3D11DeviceContext* context)
+void ParticleSystem::Render(ID3D11DeviceContext* context, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix)
 {
 	if (!isWarmedUp)
 	{
 		Kickstart(context);
 	}
 
+	SetBufferData(context, viewMatrix, projectionMatrix);
+	FirstRenderPass(context);
+	SecondRenderPass(context);
+
+}
+
+void ParticleSystem::SetBufferData(ID3D11DeviceContext* context, const DirectX::XMMATRIX& viewMatrix, const DirectX::XMMATRIX& projectionMatrix)
+{
+
+	// Matrix Buffer
+	{
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		MatrixBufferType* matrixData;
+
+		//Lock Buffer
+		context->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+		//Get pointer to data
+		matrixData = static_cast<MatrixBufferType*>(mappedResource.pData);
+
+		//Set data
+		matrixData->world = worldMatrix;
+		matrixData->view = viewMatrix;
+		matrixData->projection = projectionMatrix;
+
+		context->Unmap(matrixBuffer, 0);
+	}
+}
+
+void ParticleSystem::FirstRenderPass(ID3D11DeviceContext* context)
+{
 	UINT offset = 0, stride = sizeof(ParticleAttributes);
 
 	//First Renderpass for Update
-	vs->Set(context);
+	particleUpdateVS->Set(context);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	context->VSSetConstantBuffers(0, 1, &matrixBuffer);
+
 	particleUpdateGS->BufferSwap();
 	particleUpdateGS->Set(context);
+
 	context->SOSetTargets(1, &particleUpdateGS->outputBuffer, &offset);
 	context->IASetVertexBuffers(0, 1, &particleUpdateGS->inputBuffer, &stride, &offset);
 
 	context->DrawAuto();
 	context->GSSetShader(nullptr, nullptr, 0);
 	context->SOSetTargets(0, nullptr, nullptr);
+}
+
+void ParticleSystem::SecondRenderPass(ID3D11DeviceContext* context)
+{
+	UINT offset = 0, stride = sizeof(ParticleAttributes);
 
 	//Second Renderpass for Visualization
-	vs->Set(context);
+	particleVisualsVS->Set(context);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	context->IASetVertexBuffers(0, 1, &particleUpdateGS->outputBuffer, &stride, &offset);
+	context->VSSetConstantBuffers(0, 1, &matrixBuffer);
+
 	particleVisualsGS->Set(context);
 	ps->Set(context);
 

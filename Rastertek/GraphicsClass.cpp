@@ -446,7 +446,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	//terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
 
 	//Render Particles
-	particles->Render(direct3D->GetDeviceContext());
+	particles->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix);
 
 	//Text
 	ID3D11DepthStencilState* depthstate;

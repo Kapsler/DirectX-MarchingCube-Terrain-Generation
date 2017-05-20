@@ -10,8 +10,33 @@ void main(
 	inout PointStream<ParticleAttributes> output
 )
 {
-    ParticleAttributes element;
-    element.position = input[0].position;
-    element.type = input[0].type;
-	output.Append(element);
+    ParticleAttributes particle;
+    particle.position = input[0].position;
+    particle.type = input[0].type;
+    output.Append(particle);
+
+    //if (input[0].type == 0)
+    //{
+    //    ParticleAttributes emitter;
+    //    emitter.position = input[0].position;
+    //    emitter.type = 0;
+    //    output.Append(emitter);
+       
+    //    ParticleAttributes particle;
+    //    particle.position = input[0].position;
+    //    particle.position.y += 0.01f;
+    //    particle.type = 1;
+    //    output.Append(particle);
+      
+    //}
+    
+    //if (input[0].type == 1)
+    //{
+    //    ParticleAttributes particle;
+    //    particle.position = input[0].position;
+    //    particle.position.y += 0.01f;
+    //    particle.type = 1;
+    //    output.Append(particle);
+    //}
+
 }
