@@ -226,13 +226,17 @@ void ParticleSystem::Render(ID3D11DeviceContext* context, DirectX::XMMATRIX view
 
 }
 
-void ParticleSystem::SetBufferData(ID3D11DeviceContext* context, const DirectX::XMMATRIX& viewMatrix, const DirectX::XMMATRIX& projectionMatrix)
+void ParticleSystem::SetBufferData(ID3D11DeviceContext* context, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix)
 {
 
 	// Matrix Buffer
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		MatrixBufferType* matrixData;
+
+		DirectX::XMMATRIX world = XMMatrixTranspose(worldMatrix);
+		viewMatrix = XMMatrixTranspose(viewMatrix);
+		projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
 		//Lock Buffer
 		context->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -241,7 +245,7 @@ void ParticleSystem::SetBufferData(ID3D11DeviceContext* context, const DirectX::
 		matrixData = static_cast<MatrixBufferType*>(mappedResource.pData);
 
 		//Set data
-		matrixData->world = worldMatrix;
+		matrixData->world = world;
 		matrixData->view = viewMatrix;
 		matrixData->projection = projectionMatrix;
 
@@ -263,6 +267,8 @@ void ParticleSystem::FirstRenderPass(ID3D11DeviceContext* context)
 
 	context->SOSetTargets(1, &particleUpdateGS->outputBuffer, &offset);
 	context->IASetVertexBuffers(0, 1, &particleUpdateGS->inputBuffer, &stride, &offset);
+
+	context->PSSetShader(nullptr, nullptr, 0);
 
 	context->DrawAuto();
 	context->GSSetShader(nullptr, nullptr, 0);

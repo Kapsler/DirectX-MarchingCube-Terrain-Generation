@@ -17,7 +17,7 @@ void main(
 	inout TriangleStream<ParticleVisuals> output
 )
 {
-    float offset = 1.0f;
+    float offset = 0.1f;
     float4 particleColor;
 
     if (input[0].type == 0)

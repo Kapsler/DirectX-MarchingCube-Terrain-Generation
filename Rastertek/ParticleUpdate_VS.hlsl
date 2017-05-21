@@ -11,22 +11,11 @@ cbuffer MatrixBuffer : register(b0)
     matrix projectionMatrix;
 };
 
-float4 GetFinalPosition(float4 pos)
-{
-    float4 result;
-
-    result = mul(pos, worldMatrix);
-    result = mul(result, viewMatrix);
-    result = mul(result, projectionMatrix);
-
-    return result;
-}
-
 ParticleAttributes main(ParticleAttributes input)
 {
     ParticleAttributes output;
 
-    output.position = GetFinalPosition(input.position);
+    output.position = input.position;
     output.type = input.type;
 
     return output;

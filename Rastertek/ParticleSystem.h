@@ -39,7 +39,7 @@ private:
 	void InitializeShaders(ID3D11Device* device);
 	bool InitializeBuffers(ID3D11Device* device);
 	void Kickstart(ID3D11DeviceContext* context);
-	void SetBufferData(ID3D11DeviceContext* context, const DirectX::XMMATRIX& xmmatrix, const DirectX::XMMATRIX& projection_matrix);
+	void SetBufferData(ID3D11DeviceContext* context, DirectX::XMMATRIX xmmatrix, DirectX::XMMATRIX projection_matrix);
 	void FirstRenderPass(ID3D11DeviceContext* context);
 	void SecondRenderPass(ID3D11DeviceContext* context);
 
