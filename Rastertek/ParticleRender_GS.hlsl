@@ -41,6 +41,11 @@ void main(
         particleColor = float4(0.0f, 0.0f, 1.0f, 1.0f);
 
     }
+    else if (input[0].type == 4)
+    {
+        particleSize = input[0].age / 10000.0f;
+        particleColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
     
     ParticleVisuals p1, p2, p3;
 
