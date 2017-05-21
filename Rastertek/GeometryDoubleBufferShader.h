@@ -1,8 +1,9 @@
 #pragma once
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include "GeometryOutputShader.h"
 
-class GeometryDoubleBufferShader
+class GeometryDoubleBufferShader : public GeometryOutputShader
 {
 public:
 	GeometryDoubleBufferShader();

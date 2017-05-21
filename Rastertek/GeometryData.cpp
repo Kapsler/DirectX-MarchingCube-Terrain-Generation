@@ -398,6 +398,21 @@ void GeometryData::MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext)
 	deviceContext->GSSetShader(nullptr, nullptr, 0);
 }
 
+void GeometryData::ReadFromGSBuffer(ID3D11DeviceContext* context)
+{
+	GeometryVertexInputType* vertices;
+	D3D11_MAPPED_SUBRESOURCE mappedRessource;
+	ID3D11Buffer* readbuf = marchingCubeGSO->GetReadBuffer(context);
+
+	context->Map(readbuf, 0, D3D11_MAP_READ, 0, &mappedRessource);
+
+	vertices = static_cast<GeometryVertexInputType*>(mappedRessource.pData);
+
+	//Data Usage possible here
+
+	context->Unmap(readbuf, 0);
+}
+
 void GeometryData::GenerateNoiseData()
 {
 	size_t index = 0u;

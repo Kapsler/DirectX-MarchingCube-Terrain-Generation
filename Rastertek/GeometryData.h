@@ -35,6 +35,7 @@ public:
 	unsigned int GetVertexCount();
 
 	DirectX::XMMATRIX worldMatrix;
+
 private:
 	struct MatrixBufferType
 	{
@@ -105,6 +106,7 @@ private:
 	DecalDescription GetDecals() const;
 	void LoadTextures(ID3D11Device* device);
 	void MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext);
+	void ReadFromGSBuffer(ID3D11DeviceContext* context);
 
 	D3D11_TEXTURE3D_DESC m_texDesc;
 	D3D11_SUBRESOURCE_DATA m_subData;

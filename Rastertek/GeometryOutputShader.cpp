@@ -3,7 +3,8 @@
 
 GeometryOutputShader::GeometryOutputShader():
 	geometryShader (nullptr), 
-	outputBuffer(nullptr)
+	outputBuffer(nullptr),
+	readBuffer(nullptr)
 {
 }
 
@@ -14,10 +15,15 @@ GeometryOutputShader::~GeometryOutputShader()
 		geometryShader->Release();
 		geometryShader = nullptr;
 	}
-	if(outputBuffer)
+	if (outputBuffer)
 	{
 		outputBuffer->Release();
 		outputBuffer = nullptr;
+	}
+	if (readBuffer)
+	{
+		readBuffer->Release();
+		readBuffer = nullptr;
 	}
 }
 
@@ -71,8 +77,21 @@ bool GeometryOutputShader::Initialize(ID3D11Device* device, WCHAR* filename, D3D
 
 	//Output Buffer
 	{
-		
+
 		result = device->CreateBuffer(&bufferDesc, nullptr, &outputBuffer);
+		if (FAILED(result))
+		{
+			return result;
+		}
+	}
+
+	//Read Buffer
+	{
+		bufferDesc.Usage = D3D11_USAGE_STAGING;
+		bufferDesc.BindFlags = 0;
+		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+		result = device->CreateBuffer(&bufferDesc, nullptr, &readBuffer);
 		if (FAILED(result))
 		{
 			return result;
@@ -86,4 +105,10 @@ void GeometryOutputShader::Set(ID3D11DeviceContext* context)
 {
 	//Setting shader
 	context->GSSetShader(geometryShader, nullptr, 0);
+}
+
+ID3D11Buffer* GeometryOutputShader::GetReadBuffer(ID3D11DeviceContext* context)
+{
+	context->CopyResource(readBuffer, outputBuffer);
+	return readBuffer;
 }
