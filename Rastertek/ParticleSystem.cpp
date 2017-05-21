@@ -22,7 +22,7 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 {
 	//ParticleUpdate VS
 	{
-		D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
+		D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
 
 		//Vertex Input Layout Description - ParticleAttributes
 		polygonLayout[0].SemanticName = "SV_POSITION";
@@ -37,9 +37,17 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 		polygonLayout[1].SemanticIndex = 0;
 		polygonLayout[1].Format = DXGI_FORMAT_R32_UINT;
 		polygonLayout[1].InputSlot = 0;
-		polygonLayout[1].AlignedByteOffset = 0;
+		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 		polygonLayout[1].InstanceDataStepRate = 0;
+
+		polygonLayout[2].SemanticName = "AGE";
+		polygonLayout[2].SemanticIndex = 0;
+		polygonLayout[2].Format = DXGI_FORMAT_R32_FLOAT;
+		polygonLayout[2].InputSlot = 0;
+		polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[2].InstanceDataStepRate = 0;
 
 		UINT numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
@@ -49,7 +57,7 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 
 	//ParticleVisuals VS
 	{
-		D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
+		D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
 
 		//Vertex Input Layout Description - ParticleAttributes
 		polygonLayout[0].SemanticName = "SV_POSITION";
@@ -64,9 +72,17 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 		polygonLayout[1].SemanticIndex = 0;
 		polygonLayout[1].Format = DXGI_FORMAT_R32_UINT;
 		polygonLayout[1].InputSlot = 0;
-		polygonLayout[1].AlignedByteOffset = 0;
+		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 		polygonLayout[1].InstanceDataStepRate = 0;
+
+		polygonLayout[2].SemanticName = "AGE";
+		polygonLayout[2].SemanticIndex = 0;
+		polygonLayout[2].Format = DXGI_FORMAT_R32_FLOAT;
+		polygonLayout[2].InputSlot = 0;
+		polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[2].InstanceDataStepRate = 0;
 
 		UINT numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
@@ -85,9 +101,9 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
 		bufferDesc.StructureByteStride = 0;
-		bufferDesc.ByteWidth = sizeof(ParticleAttributes) * 1000;
+		bufferDesc.ByteWidth = sizeof(ParticleAttributes) * maxParticles;
 
-		D3D11_SO_DECLARATION_ENTRY declarationEntry[2];
+		D3D11_SO_DECLARATION_ENTRY declarationEntry[3];
 		ZeroMemory(&declarationEntry, sizeof(declarationEntry));
 
 		declarationEntry[0].ComponentCount = 4;
@@ -103,6 +119,13 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 		declarationEntry[1].OutputSlot = 0;
 		declarationEntry[1].StartComponent = 0;
 		declarationEntry[1].Stream = 0;
+
+		declarationEntry[2].ComponentCount = 1;
+		declarationEntry[2].SemanticIndex = 0;
+		declarationEntry[2].SemanticName = "AGE";
+		declarationEntry[2].OutputSlot = 0;
+		declarationEntry[2].StartComponent = 0;
+		declarationEntry[2].Stream = 0;
 
 		UINT numElements = sizeof(declarationEntry) / sizeof(declarationEntry[0]);
 
@@ -137,6 +160,7 @@ bool ParticleSystem::InitializeBuffers(ID3D11Device* device)
 		vertices = new ParticleAttributes[1];
 		vertices[0].position = DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 		vertices[0].type = 0;
+		vertices[0].age = 0;
 
 		// Set the number of vertices in the vertex array.
 		UINT vertexCount = 1;
@@ -186,6 +210,26 @@ bool ParticleSystem::InitializeBuffers(ID3D11Device* device)
 		}
 	}
 
+	//ParticleInfos Constant Buffer
+	{
+		D3D11_BUFFER_DESC particleInfosBufferDesc;
+
+		//Setup matrix Buffer Description
+		particleInfosBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		particleInfosBufferDesc.ByteWidth = sizeof(ParticleInfosBufferType);
+		particleInfosBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		particleInfosBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		particleInfosBufferDesc.MiscFlags = 0;
+		particleInfosBufferDesc.StructureByteStride = 0;
+
+		//Make Buffer accessible
+		result = device->CreateBuffer(&particleInfosBufferDesc, nullptr, &particleInfosBuffer);
+		if (FAILED(result))
+		{
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -213,20 +257,20 @@ void ParticleSystem::Kickstart(ID3D11DeviceContext* context)
 	isWarmedUp = true;
 }
 
-void ParticleSystem::Render(ID3D11DeviceContext* context, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix)
+void ParticleSystem::Render(ID3D11DeviceContext* context, float deltaTime, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix)
 {
 	if (!isWarmedUp)
 	{
 		Kickstart(context);
 	}
 
-	SetBufferData(context, viewMatrix, projectionMatrix);
+	SetBufferData(context, viewMatrix, projectionMatrix, deltaTime);
 	FirstRenderPass(context);
 	SecondRenderPass(context);
 
 }
 
-void ParticleSystem::SetBufferData(ID3D11DeviceContext* context, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix)
+void ParticleSystem::SetBufferData(ID3D11DeviceContext* context, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix, float deltaTime)
 {
 
 	// Matrix Buffer
@@ -251,6 +295,23 @@ void ParticleSystem::SetBufferData(ID3D11DeviceContext* context, DirectX::XMMATR
 
 		context->Unmap(matrixBuffer, 0);
 	}
+
+	// ParticleInfos Buffer
+	{
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		ParticleInfosBufferType* particleInfosData;
+
+		//Lock Buffer
+		context->Map(particleInfosBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+		//Get pointer to data
+		particleInfosData = static_cast<ParticleInfosBufferType*>(mappedResource.pData);
+
+		//Set data
+		particleInfosData->deltaTime = deltaTime;
+
+		context->Unmap(particleInfosBuffer, 0);
+	}
 }
 
 void ParticleSystem::FirstRenderPass(ID3D11DeviceContext* context)
@@ -260,10 +321,10 @@ void ParticleSystem::FirstRenderPass(ID3D11DeviceContext* context)
 	//First Renderpass for Update
 	particleUpdateVS->Set(context);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-	context->VSSetConstantBuffers(0, 1, &matrixBuffer);
 
 	particleUpdateGS->BufferSwap();
 	particleUpdateGS->Set(context);
+	context->GSSetConstantBuffers(0, 1, &particleInfosBuffer);
 
 	context->SOSetTargets(1, &particleUpdateGS->outputBuffer, &offset);
 	context->IASetVertexBuffers(0, 1, &particleUpdateGS->inputBuffer, &stride, &offset);

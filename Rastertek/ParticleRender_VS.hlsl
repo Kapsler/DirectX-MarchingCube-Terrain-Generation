@@ -2,6 +2,7 @@ struct ParticleAttributes
 {
     float4 position : SV_POSITION;
     uint type : TYPE;
+    float age : AGE;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -28,6 +29,7 @@ ParticleAttributes main(ParticleAttributes input)
 
     output.position = GetFinalPosition(input.position);
     output.type = input.type;
+    output.age = input.age;
 
     return output;
 }

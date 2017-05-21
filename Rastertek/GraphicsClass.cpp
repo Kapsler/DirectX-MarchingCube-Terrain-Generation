@@ -227,7 +227,7 @@ bool GraphicsClass::Frame(InputClass* input)
 
 	SetLightDirection(input);
 
-	result = Render(rotation, input);
+	result = Render(rotation, input, deltaTime);
 	if (!result)
 	{
 		return false;
@@ -411,7 +411,7 @@ bool GraphicsClass::SetScreenBuffer(float red, float green, float blue, float al
 	return true;
 }
 
-bool GraphicsClass::Render(float rotation, InputClass* input)
+bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 {
 	XMMATRIX viewMatrix, projectionMatrix, translateMatrix;
 	XMMATRIX lightViewMatrix, lightProjectionMatrix;
@@ -446,7 +446,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input)
 	//terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
 
 	//Render Particles
-	particles->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix);
+	particles->Render(direct3D->GetDeviceContext(), deltaTime, viewMatrix, projectionMatrix);
 
 	//Text
 	ID3D11DepthStencilState* depthstate;

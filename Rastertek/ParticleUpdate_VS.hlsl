@@ -2,13 +2,7 @@ struct ParticleAttributes
 {
     float4 position : SV_POSITION;
     uint type : TYPE;
-};
-
-cbuffer MatrixBuffer : register(b0)
-{
-    matrix worldMatrix;
-    matrix viewMatrix;
-    matrix projectionMatrix;
+    float age : AGE;
 };
 
 ParticleAttributes main(ParticleAttributes input)
@@ -17,6 +11,7 @@ ParticleAttributes main(ParticleAttributes input)
 
     output.position = input.position;
     output.type = input.type;
+    output.age = input.age;
 
     return output;
 }

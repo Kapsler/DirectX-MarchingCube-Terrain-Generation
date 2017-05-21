@@ -41,7 +41,7 @@ private:
 	void SetupPrimitiveBatch();
 	bool RenderSceneToTexture();
 	bool SetScreenBuffer(float, float, float, float);
-	bool Render(float, InputClass*);
+	bool Render(float, InputClass*, float deltaTime);
 	void CheckWireframe(InputClass*);
 	void CheckMSKeys(InputClass*);
 	void CheckTerrainKey(InputClass* input);
