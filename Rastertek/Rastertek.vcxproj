@@ -175,6 +175,7 @@
   <ItemGroup>
     <ClCompile Include="CameraClass.cpp" />
     <ClCompile Include="DepthShaderClass.cpp" />
+    <ClCompile Include="KdTree.cpp" />
     <ClCompile Include="GeometryData.cpp" />
     <ClCompile Include="GeometryDoubleBufferShader.cpp" />
     <ClCompile Include="GeometryOutputShader.cpp" />
@@ -197,6 +198,7 @@
   <ItemGroup>
     <ClInclude Include="CameraClass.h" />
     <ClInclude Include="DepthShaderClass.h" />
+    <ClInclude Include="KdTree.h" />
     <ClInclude Include="GeometryData.h" />
     <ClInclude Include="GeometryDoubleBufferShader.h" />
     <ClInclude Include="GeometryOutputShader.h" />

@@ -3,7 +3,6 @@
 #include <SpriteFont.h>
 #include <SimpleMath.inl>
 #include <string>
-#include <iostream>
 #include "modelclass.h"
 
 GraphicsClass::GraphicsClass()
@@ -23,7 +22,7 @@ GraphicsClass::GraphicsClass()
 
 GraphicsClass::GraphicsClass(const GraphicsClass&)
 {
-	
+	//TODO Most Copy Constructors in this project still need to be implemented
 }
 
 GraphicsClass::~GraphicsClass()
@@ -95,8 +94,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
 
 	RegenrateTerrain();
+	//SpawnParticles(0, 0, 0);
 
-	particles = new ParticleSystem(direct3D->GetDevice());
 	//HARDCODED END
 
 	//Create RenderToTexture
@@ -217,6 +216,9 @@ bool GraphicsClass::Frame(InputClass* input)
 	CheckTerrainKey(input);
 	CheckRotationKey(input); 
 	CheckFactorKeys(input);
+	CheckRaycast(input);
+
+	tree.UpdateKDTree();
 
 	// Update the rotation variable each frame.
 	rotation += static_cast<float>(XM_PI) * 0.0001f;
@@ -439,18 +441,22 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	light->GenerateViewMatrix();
 	light->GetViewMatrix(lightViewMatrix);
 	light->GetProjectionMatrix(lightProjectionMatrix);
-
-
-
+	
 	//clear Buffer at beginning
 	//direct3D->BeginScene(0.2f, 0.5f, 0.5f, 0.0f);
 	SetScreenBuffer(0.5f, 0.5f, 0.5f, 1.0f);
 
 	//Render Geometry	
-	terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
+	if(terrain)
+	{
+		terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
+	}
 
 	//Render Particles
-	//particles->Render(direct3D->GetDeviceContext(), deltaTime, viewMatrix, projectionMatrix);
+	if (particles) 
+	{
+		particles->Render(direct3D->GetDeviceContext(), deltaTime, viewMatrix, projectionMatrix);
+	}
 
 	//Text
 	ID3D11DepthStencilState* depthstate;
@@ -466,7 +472,6 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	RenderText("QualityLevel: " + std::to_string(direct3D->GetCurrentQualityLevel()) + " of " + std::to_string(direct3D->GetMaxQualityLevels()), qlPos, false);
 	m_spriteBatch->End();
 
-
 	//Primitive Batch Begin
 	CommonStates states(direct3D->GetDevice());
 
@@ -475,6 +480,10 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	basicEffect->SetProjection(projectionMatrix);
 	basicEffect->Apply(direct3D->GetDeviceContext());
 	direct3D->GetDeviceContext()->IASetInputLayout(inputLayout);
+
+	//primitiveBatch->Begin();
+	//tree.Draw(primitiveBatch, Colors::LightGreen);
+	//primitiveBatch->End();
 
 	ID3D11Texture2D* backBuffer;
 	direct3D->swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&backBuffer));
@@ -644,6 +653,47 @@ void GraphicsClass::CheckFactorKeys(InputClass* input)
 
 }
 
+void GraphicsClass::CastRay(const Ray& ray)
+{
+	float maxRange = 100000.0f;
+	float hitfloat = 100000.0f;
+
+	KdTree::RayHitStruct hit1;
+	if(tree.hitCheckAll(&ray, hitfloat, maxRange, hit1))
+	{
+		SpawnParticles(hit1.hitPoint.x, hit1.hitPoint.y, hit1.hitPoint.z);
+	} else
+	{
+		printf("Hit nothing.\n\r");
+	}
+
+}
+
+void GraphicsClass::CheckRaycast(InputClass* input)
+{
+	unsigned int spaceKey = VK_SPACE;
+
+	if (!rayToggle)
+	{
+		if (input->IsKeyDown(spaceKey))
+		{
+			Ray ray;
+			ray.position = camera->GetPosition();
+			XMMATRIX newdir;
+			camera->GetViewMatrix(newdir);
+			ray.direction = Matrix(newdir).Transpose().Backward();
+			rayToggle = true;
+
+			CastRay(ray);
+		}
+	}
+
+	if (rayToggle && input->IsKeyUp(spaceKey))
+	{
+		rayToggle = false;
+	}
+}
+
 void GraphicsClass::SetLightDirection(InputClass* input)
 {
 	unsigned int onekey = 0x31;
@@ -717,7 +767,14 @@ void GraphicsClass::RegenrateTerrain()
 {
 	delete terrain;
 
-	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext());
+	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext(), &tree);
 	terrain->worldMatrix = XMMatrixIdentity() * XMMatrixScaling(5.0f, 5.0f, 5.0f);
 	//terrain->DebugPrint();
+}
+
+void GraphicsClass::SpawnParticles(float x, float y, float z)
+{
+	delete particles;
+
+	particles = new ParticleSystem(direct3D->GetDevice(), x, y, z);
 }

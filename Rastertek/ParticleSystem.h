@@ -8,7 +8,7 @@
 class ParticleSystem
 {
 public:
-	ParticleSystem(ID3D11Device* device);
+	ParticleSystem(ID3D11Device* device, float x, float y, float z);
 	ParticleSystem(const ParticleSystem& other);
 	~ParticleSystem();
 
@@ -44,7 +44,7 @@ private:
 	};
 
 	void InitializeShaders(ID3D11Device* device);
-	bool InitializeBuffers(ID3D11Device* device);
+	bool InitializeBuffers(ID3D11Device* device, float x, float y, float z);
 	void Kickstart(ID3D11DeviceContext* context);
 	void SetBufferData(ID3D11DeviceContext* context, DirectX::XMMATRIX xmmatrix, DirectX::XMMATRIX projection_matrix, float deltaTime);
 	void FirstRenderPass(ID3D11DeviceContext* context);

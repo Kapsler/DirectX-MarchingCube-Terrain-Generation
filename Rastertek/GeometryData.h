@@ -9,6 +9,7 @@
 #include "GeometryShader.h"
 #include "PixelShader.h"
 #include "GeometryOutputShader.h"
+#include "KdTree.h"
 
 class GeometryData
 {
@@ -27,7 +28,7 @@ public:
 		};
 	};
 
-	GeometryData(unsigned int width, unsigned int height, unsigned int depth, TerrainType::Enum type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+	GeometryData(unsigned int width, unsigned int height, unsigned int depth, TerrainType::Enum type, ID3D11Device* device, ID3D11DeviceContext* deviceContext, KdTree* treeToUse);
 	~GeometryData();
 
 	void DebugPrint();
@@ -136,5 +137,5 @@ private:
 	noise::module::Perlin m_perlin;
 	double m_noiseOffset;
 	UINT64 generatedVertexCount = 0;
-	GeometryVertexInputType* generatedVertices;
+	KdTree* tree;
 };

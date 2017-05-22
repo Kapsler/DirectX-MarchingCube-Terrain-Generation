@@ -1,9 +1,9 @@
 #include "ParticleSystem.h"
 
-ParticleSystem::ParticleSystem(ID3D11Device* device)
+ParticleSystem::ParticleSystem(ID3D11Device* device, float x, float y, float z)
 {
 	InitializeShaders(device);
-	InitializeBuffers(device);
+	InitializeBuffers(device, x, y, z);
 	worldMatrix = DirectX::XMMatrixIdentity();
 }
 
@@ -146,7 +146,7 @@ void ParticleSystem::InitializeShaders(ID3D11Device* device)
 	}
 }
 
-bool ParticleSystem::InitializeBuffers(ID3D11Device* device)
+bool ParticleSystem::InitializeBuffers(ID3D11Device* device, float x, float y, float z)
 {
 	HRESULT result;
 
@@ -158,7 +158,7 @@ bool ParticleSystem::InitializeBuffers(ID3D11Device* device)
 		ParticleAttributes* vertices;
 
 		vertices = new ParticleAttributes[1];
-		vertices[0].position = DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+		vertices[0].position = DirectX::XMFLOAT4(x, y, z, 1.0f);
 		vertices[0].type = 0;
 		vertices[0].age = 0;
 

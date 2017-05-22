@@ -1,8 +1,8 @@
 #include "GeometryData.h"
 #include "TriangleLUT.h"
 
-GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, TerrainType::Enum type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
-	: m_width(width), m_height(height), m_depth(depth)
+GeometryData::GeometryData(unsigned width, unsigned height, unsigned depth, TerrainType::Enum type, ID3D11Device* device, ID3D11DeviceContext* deviceContext, KdTree* treeToUse)
+	: m_width(width), m_height(height), m_depth(depth), tree(treeToUse)
 {
 
 	m_cubeSize = DirectX::XMFLOAT3(64.0f, 64.0f, 64.0f);
@@ -368,8 +368,6 @@ void GeometryData::LoadTextures(ID3D11Device* device)
 
 void GeometryData::ReadFromGSBuffer(ID3D11DeviceContext* context)
 {
-	generatedVertices = new GeometryVertexInputType[generatedVertexCount];
-
 	//Reading from Buffer
 	GeometryVertexInputType* vertices;
 	D3D11_MAPPED_SUBRESOURCE mappedRessource;
@@ -379,9 +377,21 @@ void GeometryData::ReadFromGSBuffer(ID3D11DeviceContext* context)
 
 	vertices = static_cast<GeometryVertexInputType*>(mappedRessource.pData);
 
-	memcpy(generatedVertices, vertices, sizeof(GeometryVertexInputType) * generatedVertexCount);
+	//Generating Triangles
+	for(size_t i = 2u; i < generatedVertexCount; i+=3)
+	{
+		KdTree::Triangle* tri = new KdTree::Triangle();
+		tri->vertices[0] = static_cast<DirectX::XMFLOAT3>(DirectX::SimpleMath::Vector3::Transform(DirectX::SimpleMath::Vector3(vertices[i - 2].position.x, vertices[i - 2].position.y, vertices[i - 2].position.z), worldMatrix));
+		tri->vertices[1] = static_cast<DirectX::XMFLOAT3>(DirectX::SimpleMath::Vector3::Transform(DirectX::SimpleMath::Vector3(vertices[i - 1].position.x, vertices[i - 1].position.y, vertices[i - 1].position.z), worldMatrix));
+		tri->vertices[2] = static_cast<DirectX::XMFLOAT3>(DirectX::SimpleMath::Vector3::Transform(DirectX::SimpleMath::Vector3(vertices[i].position.x, vertices[i].position.y, vertices[i].position.z), worldMatrix));
+		tri->CalculateGreatest();
+		tri->CalculateSmallest();
+		tree->AddTriangle(tri);
+	}
 
 	context->Unmap(readbuf, 0);
+
+	tree->MarkKDTreeDirty();
 }
 
 void GeometryData::MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)

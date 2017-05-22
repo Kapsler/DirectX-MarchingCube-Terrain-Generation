@@ -75,6 +75,9 @@
     <ClCompile Include="GeometryDoubleBufferShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="KdTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SystemClass.h">
@@ -147,6 +150,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShaderUtility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KdTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

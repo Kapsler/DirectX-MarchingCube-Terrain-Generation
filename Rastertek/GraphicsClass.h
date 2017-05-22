@@ -15,6 +15,7 @@
 #include "PerformanceTimer.h"
 #include "GeometryData.h"
 #include "ParticleSystem.h"
+#include "KdTree.h"
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
@@ -47,11 +48,14 @@ private:
 	void CheckTerrainKey(InputClass* input);
 	void CheckRotationKey(InputClass* input);
 	void CheckFactorKeys(InputClass* input);
+	void CastRay(const Ray& ray);
+	void CheckRaycast(InputClass*);
 	void SetLightDirection(InputClass*);
 	void ChangeFillmode(D3D11_FILL_MODE);
 	void RenderText(string texttorender, Vector2 screenPos, bool centerOrigin);
 	void RenderText(int inttorender, Vector2 screenPos, bool centerOrigin);
 	void RegenrateTerrain();
+	void SpawnParticles(float x, float y, float z);
 
 	D3DClass* direct3D;
 	CameraClass* camera;
@@ -62,6 +66,7 @@ private:
 	DepthShaderClass* depthShader;
 
 	bool wireframeMode, wireframeKeyToggle = false, bumpinessKeyToggle = false, msmodetoggle = false, terrainKeyToggle = false;
+	bool rayToggle = false;
 	bool rotationKeyToggle = false;
 	bool factorKeyToggle = false;
 	bool rotate = false;
@@ -87,4 +92,5 @@ private:
 	
 	GeometryData* terrain = nullptr;
 	ParticleSystem* particles = nullptr;
+	KdTree tree;
 };
