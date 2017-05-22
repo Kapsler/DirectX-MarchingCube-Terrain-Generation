@@ -391,6 +391,8 @@ bool GraphicsClass::SetScreenBuffer(float red, float green, float blue, float al
 {
 	XMMATRIX lightViewMatrix, lightProjectionMatrix;
 
+	direct3D->BeginScene(red, green, blue, alpha);
+
 	//Set texture as render target
 	renderTexture->SetRenderTarget(direct3D->GetDeviceContext());
 	direct3D->GetDeviceContext()->OMSetRenderTargets(1, &screenTargetView, depthTargetView);
@@ -423,10 +425,6 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	//	return false;
 	//}
 
-	//clear Buffer at beginning
-	SetScreenBuffer(0.5f, 0.5f, 0.5f, 1.0f);
-	//direct3D->BeginScene(0.2f, 0.5f, 0.5f, 0.0f);
-
 	//Generate view matrix based on camera
 	camera->DoMovement(input);
 	camera->Render();
@@ -441,8 +439,14 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	light->GenerateViewMatrix();
 	light->GetViewMatrix(lightViewMatrix);
 	light->GetProjectionMatrix(lightProjectionMatrix);
-	
-	//Render Geometry
+
+
+
+	//clear Buffer at beginning
+	//direct3D->BeginScene(0.2f, 0.5f, 0.5f, 0.0f);
+	SetScreenBuffer(0.5f, 0.5f, 0.5f, 1.0f);
+
+	//Render Geometry	
 	terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), camera->GetForward(), camera->GetUp(), steps_initial, steps_refinement, depthfactor);
 
 	//Render Particles

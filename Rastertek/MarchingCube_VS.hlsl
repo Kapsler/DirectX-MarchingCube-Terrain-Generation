@@ -1,10 +1,3 @@
-cbuffer MatrixBuffer
-{
-    matrix worldMatrix;
-    matrix viewMatrix;
-    matrix projectionMatrix;
-};
-
 struct VertexInputType
 {
     float3 position : SV_POSITION;

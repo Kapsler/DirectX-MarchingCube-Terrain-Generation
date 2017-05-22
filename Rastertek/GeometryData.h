@@ -33,9 +33,12 @@ public:
 	void DebugPrint();
 	void Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor);
 	unsigned int GetVertexCount();
+	void MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix);
+	void CountGeneratedTriangles(ID3D11DeviceContext* context);
 
 	DirectX::XMMATRIX worldMatrix;
 
+	bool isGeometryGenerated = false;
 private:
 	struct MatrixBufferType
 	{
@@ -105,7 +108,6 @@ private:
 	void GenerateDecalDescriptionBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	DecalDescription GetDecals() const;
 	void LoadTextures(ID3D11Device* device);
-	void MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext);
 	void ReadFromGSBuffer(ID3D11DeviceContext* context);
 
 	D3D11_TEXTURE3D_DESC m_texDesc;
@@ -117,6 +119,7 @@ private:
 	ID3D11Buffer *m_vertexBuffer = nullptr;
 	ID3D11Buffer* m_decalDescriptionBuffer = nullptr;
 	ID3D11Buffer* matrixBuffer, *eyeBuffer, *factorBuffer;
+	ID3D11Query* statsQuery;
 
 	VertexShader* marchingCubeVS, *geometryVS;
 	PixelShader* triplanarDisplacementPS;
@@ -125,7 +128,6 @@ private:
 	//Textures
 	TextureClass* m_colorTextures[3] = {nullptr};
 
-	bool isGeometryGenerated = false;
 	float* m_data;
 	unsigned int m_width, m_height, m_depth;
 	unsigned int m_vertexCount;
@@ -133,4 +135,6 @@ private:
 	DirectX::XMFLOAT3 m_cubeStep;
 	noise::module::Perlin m_perlin;
 	double m_noiseOffset;
+	UINT64 generatedVertexCount = 0;
+	GeometryVertexInputType* generatedVertices;
 };

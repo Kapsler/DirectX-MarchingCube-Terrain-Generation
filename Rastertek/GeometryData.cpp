@@ -343,7 +343,6 @@ bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX world, X
 
 	context->Unmap(factorBuffer, 0);
 
-
 	return true;
 }
 
@@ -367,8 +366,53 @@ void GeometryData::LoadTextures(ID3D11Device* device)
 	m_colorTextures[2] = rock3;
 }
 
-void GeometryData::MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext)
+void GeometryData::ReadFromGSBuffer(ID3D11DeviceContext* context)
 {
+	generatedVertices = new GeometryVertexInputType[generatedVertexCount];
+
+	//Reading from Buffer
+	GeometryVertexInputType* vertices;
+	D3D11_MAPPED_SUBRESOURCE mappedRessource;
+	ID3D11Buffer* readbuf = marchingCubeGSO->GetReadBuffer(context);
+
+	context->Map(readbuf, 0, D3D11_MAP_READ, 0, &mappedRessource);
+
+	vertices = static_cast<GeometryVertexInputType*>(mappedRessource.pData);
+
+	memcpy(generatedVertices, vertices, sizeof(GeometryVertexInputType) * generatedVertexCount);
+
+	context->Unmap(readbuf, 0);
+}
+
+void GeometryData::MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
+{
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	MatrixBufferType* matrixData;
+
+	//DirectX11 need matrices transposed!
+	XMMATRIX world = XMMatrixTranspose(XMMatrixIdentity());
+	viewMatrix = XMMatrixTranspose(viewMatrix);
+	projectionMatrix = XMMatrixTranspose(projectionMatrix);
+
+	// ### MATRIXBUFFER ###
+	//Lock Buffer
+	result = deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		printf("Mapping Buffer failed in MarchingCube Renderpass.\n\r");
+	}
+
+	//Get pointer to data
+	matrixData = static_cast<MatrixBufferType*>(mappedResource.pData);
+
+	//Set data
+	matrixData->world = world;
+	matrixData->view = viewMatrix;
+	matrixData->projection = projectionMatrix;
+
+	deviceContext->Unmap(matrixBuffer, 0);
+
 	UINT offset = 0, stride = sizeof(MarchingCubeVertexInputType);
 	deviceContext->SOSetTargets(1, &marchingCubeGSO->outputBuffer, &offset);
 
@@ -388,31 +432,31 @@ void GeometryData::MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext)
 	deviceContext->GSSetSamplers(0, 1, &m_densitySampler);
 	deviceContext->GSSetConstantBuffers(1, 1, &m_decalDescriptionBuffer);
 
-	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
 	deviceContext->GSSetConstantBuffers(0, 1, &matrixBuffer);
 
+	deviceContext->Begin(statsQuery);
 	deviceContext->Draw(m_vertexCount, 0);
+	deviceContext->End(statsQuery);
 
 	deviceContext->SOSetTargets(0, nullptr, nullptr);
 	isGeometryGenerated = true;
 	deviceContext->GSSetShader(nullptr, nullptr, 0);
+
+	CountGeneratedTriangles(deviceContext);
+	ReadFromGSBuffer(deviceContext);
 }
 
-void GeometryData::ReadFromGSBuffer(ID3D11DeviceContext* context)
+void GeometryData::CountGeneratedTriangles(ID3D11DeviceContext* context)
 {
-	GeometryVertexInputType* vertices;
-	D3D11_MAPPED_SUBRESOURCE mappedRessource;
-	ID3D11Buffer* readbuf = marchingCubeGSO->GetReadBuffer(context);
+	D3D11_QUERY_DATA_PIPELINE_STATISTICS stats;
+	while(S_OK != context->GetData(statsQuery, &stats, sizeof(stats), 0))
+	{
+		Sleep(1);
+	}
 
-	context->Map(readbuf, 0, D3D11_MAP_READ, 0, &mappedRessource);
-
-	vertices = static_cast<GeometryVertexInputType*>(mappedRessource.pData);
-
-	//Data Usage possible here
-
-	context->Unmap(readbuf, 0);
+	generatedVertexCount = stats.VSInvocations;
+	printf("%llu\n\r", generatedVertexCount);
 }
-
 void GeometryData::GenerateNoiseData()
 {
 	size_t index = 0u;
@@ -578,6 +622,19 @@ bool GeometryData::InitializeBuffers(ID3D11Device* device)
 		result = device->CreateBuffer(&factorBufferDesc, nullptr, &factorBuffer);
 		if (FAILED(result))
 		{
+			return false;
+		}
+	}
+
+	//Query
+	{
+		D3D11_QUERY_DESC queryDesc;
+		queryDesc.Query = D3D11_QUERY_PIPELINE_STATISTICS;
+		queryDesc.MiscFlags = 0;
+		result = device->CreateQuery(&queryDesc, &statsQuery);
+		if(FAILED(result))
+		{
+			printf("Buffer Creation Failed. \n\r");
 			return false;
 		}
 	}
@@ -913,12 +970,9 @@ void GeometryData::DebugPrint()
 
 void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
 {
-
-
-	if(!isGeometryGenerated)
+	if (!isGeometryGenerated)
 	{
-		SetBufferData(deviceContext, XMMatrixIdentity(), viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
-		MarchingCubeRenderpass(deviceContext);	
+		MarchingCubeRenderpass(deviceContext, viewMatrix, projectionMatrix);
 	}
 
 	SetBufferData(deviceContext, worldMatrix, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
