@@ -11,7 +11,7 @@ cbuffer ParticleInfosBuffer : register(b0)
     float3 padding;
 };
 
-[maxvertexcount(4)]
+[maxvertexcount(150)]
 void main(
     point ParticleAttributes input[1],
 	inout PointStream<ParticleAttributes> output
@@ -19,6 +19,7 @@ void main(
 {
     float movementSpeed = 0.001f * deltaTime;
     float lifeTimeInMilliseconds = 2000.0f;
+    float spawnCosts = 500.0f;
 
     //Emitter
     if (input[0].type == 0)
@@ -26,25 +27,25 @@ void main(
         ParticleAttributes emitter;
         emitter.age = input[0].age += deltaTime;
 
-        if (input[0].age > 1000.0f)
+        for (int i = 1; emitter.age > spawnCosts; ++i)
         {
-            emitter.age = 0.0f;
+            emitter.age -= spawnCosts;
 
             ParticleAttributes particle;
             particle.position = input[0].position;
-            particle.position.x += movementSpeed;
+            particle.position.x += movementSpeed * i;
             particle.type = 1;
             particle.age = 0.0f;
             output.Append(particle);
         
             particle.position = input[0].position;
-            particle.position.y += movementSpeed;
+            particle.position.y += movementSpeed * i;
             particle.type = 2;
             particle.age = 0.0f;
             output.Append(particle);
 
             particle.position = input[0].position;
-            particle.position.x -= movementSpeed;
+            particle.position.x -= movementSpeed * i;
             particle.type = 3;
             particle.age = 0.0f;
             output.Append(particle);
@@ -62,19 +63,19 @@ void main(
         //Type 1
         if (input[0].type == 1)
         {
-            moveDir = float3(1.0f, cos(input[0].age * 0.01f), sin(input[0].age * 0.01f));   
+            moveDir = float3(1.0f, cos(input[0].age * 0.01f) * 2, sin(input[0].age * 0.01f) * 2);   
         }
     
         //Type 2
         if (input[0].type == 2)
         {
-            moveDir = float3(cos(input[0].age * 0.01f), 1.0f, sin(input[0].age * 0.01f));
+            moveDir = float3(cos(input[0].age * 0.01f) * 2, 1.0f, sin(input[0].age * 0.01f) * 2);
         }
     
         //Type 3
         if (input[0].type == 3)
         {
-            moveDir = float3(-1.0f, cos(input[0].age * 0.01f), sin(input[0].age * 0.01f));
+            moveDir = float3(-1.0f, cos(input[0].age * 0.01f) * 2, sin(input[0].age * 0.01f) * 2);
         }
 
         if (input[0].age < lifeTimeInMilliseconds)
@@ -99,7 +100,7 @@ void main(
     {
         if (input[0].age < lifeTimeInMilliseconds / 5.0f)
         {
-            float3 moveDir = float3(1.0f, 1.0f, 0.0f);
+            float3 moveDir = float3(0.0f, 0.0f, 0.0f);
             ParticleAttributes particle;
             particle.position = input[0].position;
             particle.position.xyz += moveDir * movementSpeed;
