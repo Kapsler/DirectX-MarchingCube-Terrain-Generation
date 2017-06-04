@@ -78,11 +78,13 @@ public:
 	};
 
 	bool hitCheckAll(const DirectX::SimpleMath::Ray* ray, float& t, float& tmin, RayHitStruct& rayhit);
+	bool hit(const DirectX::SimpleMath::Ray* ray, float& t, float& tmin, RayHitStruct& rayhit);
 	void MarkKDTreeDirty();
 	void UpdateKDTree();
 	void AddTriangles(const std::vector<Triangle*> newTriangles);
 	void AddTriangle(Triangle* tri);
 	void Draw(DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch, DirectX::XMVECTORF32 color);
+	void PurgeTriangles();
 
 private:
 	std::vector<Triangle*>* treeTriangles = new std::vector<Triangle*>();

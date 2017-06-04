@@ -218,7 +218,7 @@ bool GraphicsClass::Frame(InputClass* input)
 	CheckFactorKeys(input);
 	CheckRaycast(input);
 
-	tree.UpdateKDTree();
+	//tree.UpdateKDTree();
 
 	// Update the rotation variable each frame.
 	rotation += static_cast<float>(XM_PI) * 0.0001f;
@@ -481,6 +481,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	basicEffect->Apply(direct3D->GetDeviceContext());
 	direct3D->GetDeviceContext()->IASetInputLayout(inputLayout);
 
+	//Render KD-Tree
 	//primitiveBatch->Begin();
 	//tree.Draw(primitiveBatch, Colors::LightGreen);
 	//primitiveBatch->End();
@@ -659,7 +660,7 @@ void GraphicsClass::CastRay(const Ray& ray)
 	float hitfloat = 100000.0f;
 
 	KdTree::RayHitStruct hit1;
-	if(tree.hitCheckAll(&ray, hitfloat, maxRange, hit1))
+	if(tree.hit(&ray, hitfloat, maxRange, hit1))
 	{
 		SpawnParticles(hit1.hitPoint.x, hit1.hitPoint.y, hit1.hitPoint.z);
 	} else
@@ -765,6 +766,7 @@ void GraphicsClass::RenderText(int inttorender, Vector2 screenPos, bool centerOr
  
 void GraphicsClass::RegenrateTerrain()
 {
+	tree.PurgeTriangles();
 	delete terrain;
 
 	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext(), &tree);

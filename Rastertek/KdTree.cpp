@@ -41,6 +41,16 @@ bool KdTree::hitCheckAll(const DirectX::SimpleMath::Ray* ray, float& t, float& t
 	return false;
 }
 
+bool KdTree::hit(const DirectX::SimpleMath::Ray* ray, float& t, float& tmin, RayHitStruct& rayhit)
+{
+	if (tree)
+	{
+		return tree->hit(tree, ray, t, tmin, rayhit);
+	}
+
+	return false;
+}
+
 void KdTree::MarkKDTreeDirty()
 {
 	isDirty = true;
@@ -407,4 +417,14 @@ void KdTree::Draw(DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch, 
 		tree->Draw(batch, color);
 	}
 	
+}
+
+void KdTree::PurgeTriangles()
+{
+	for(size_t i = 0u; i < treeTriangles->size(); ++i)
+	{
+		delete (*treeTriangles)[i];
+	}
+
+	treeTriangles->clear();
 }

@@ -19,7 +19,7 @@ void main(
 {
     float movementSpeed = 0.001f * deltaTime;
     float lifeTimeInMilliseconds = 2000.0f;
-    float spawnCosts = 500.0f;
+    float spawnCosts = 100.0f;
 
     //Emitter
     if (input[0].type == 0)
