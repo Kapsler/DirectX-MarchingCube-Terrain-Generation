@@ -57,8 +57,7 @@ private:
 	{
 		XMFLOAT3 cameraPosition;
 		float padding1;
-		XMFLOAT3 lightPosition;
-		float padding2;
+		XMFLOAT4 lightDirection;
 		XMFLOAT4 diffuseColor;
 		XMFLOAT4 ambientColor;
 	};

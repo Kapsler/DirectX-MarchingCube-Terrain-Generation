@@ -19,6 +19,7 @@ public:
 	XMFLOAT4 GetAmbientColor();
 	XMFLOAT4 GetDiffuseColor();
 	XMFLOAT3 GetPosition();
+	XMFLOAT4 GetDirection();
 
 	void GenerateViewMatrix();
 	void GenerateProjectionsMatrix(float, float);

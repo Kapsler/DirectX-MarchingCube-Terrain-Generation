@@ -46,6 +46,13 @@ XMFLOAT3 LightClass::GetPosition()
 	return XMFLOAT3(position);
 }
 
+XMFLOAT4 LightClass::GetDirection()
+{
+	SimpleMath::Vector4 lightDir(lookAt - position);
+	lightDir.Normalize();
+	return XMFLOAT4(-lightDir);
+}
+
 void LightClass::GenerateViewMatrix()
 {
 	SimpleMath::Vector3 up;

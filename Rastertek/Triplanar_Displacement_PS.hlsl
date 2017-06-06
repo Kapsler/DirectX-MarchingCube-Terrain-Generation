@@ -24,8 +24,7 @@ cbuffer LightingBuffer: register(b2)
 {
     float3 cameraPosition;
     float padding1;
-    float3 lightPosition;
-    float padding2;
+    float4 lightDirection;
     float4 diffuseColor;
     float4 ambientColor;
 };
@@ -172,7 +171,6 @@ float4 main(PixelInputType input) : SV_TARGET
 {    
     float tex_scale = 1.0f;
 
-    float4 lightPos = float4(lightPosition, 1.0f);
     float4 finalColor = ambientColor;
 
     //Get Viewing Direction
@@ -193,7 +191,7 @@ float4 main(PixelInputType input) : SV_TARGET
     N_for_lighting.w = 0.0f;
 
     //Diffuse Light
-    float4 lightDir = normalize(lightPos - input.worldPos);
+    float4 lightDir = lightDirection;
 
     float lightIntensity = saturate(dot(N_for_lighting, lightDir));
     if (lightIntensity > 0.0f)

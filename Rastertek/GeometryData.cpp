@@ -320,7 +320,7 @@ bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX world, X
 
 	//Set data
 	lightData->cameraPosition = eyePos;
-	lightData->lightPosition = light.GetPosition();
+	lightData->lightDirection = light.GetDirection();
 	lightData->diffuseColor = light.GetDiffuseColor();
 	lightData->ambientColor = light.GetAmbientColor();
 
