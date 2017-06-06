@@ -29,7 +29,9 @@ void LightClass::SetDiffuseColor(float red, float green, float blue, float alpha
 
 void LightClass::SetPosition(float x, float y, float z)
 {
-	position = XMFLOAT3(x, y, z);
+	position.x = x;
+	position.y = y;
+	position.z = z;
 }
 
 void LightClass::SetLookAt(float x, float y, float z)
@@ -41,7 +43,7 @@ void LightClass::SetLookAt(float x, float y, float z)
 
 XMFLOAT3 LightClass::GetPosition()
 {
-	return position;
+	return XMFLOAT3(position);
 }
 
 void LightClass::GenerateViewMatrix()

@@ -87,10 +87,10 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	{
 		return false;
 	}
-	light->SetPosition(-30.0f, 100.0f, -100.0f);
+	light->SetPosition(30.0f, 100.0f, 100.0f);
 	light->SetAmbientColor(0.2f, 0.2f, 0.2f, 1.0f);
 	light->SetDiffuseColor(1.0, 1.0, 1.0, 1.0f);
-	light->SetLookAt(0.0f, 0.0f, 20.0f);
+	light->SetLookAt(0.0f, 0.0f, 0.0f);
 	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
 
 	RegenrateTerrain();
@@ -227,7 +227,6 @@ bool GraphicsClass::Frame(InputClass* input)
 		rotation -= 360.0f;
 	}
 
-	SetLightDirection(input);
 
 	result = Render(rotation, input, deltaTime);
 	if (!result)
@@ -381,7 +380,7 @@ bool GraphicsClass::RenderSceneToTexture()
 	light->GetViewMatrix(lightViewMatrix);
 	light->GetProjectionMatrix(lightProjectionMatrix);
 
-	//Geometry Goes here
+	//Geometry Goes here, Shadow Map RenderPass
 
 	direct3D->SetBackBufferRenderTarget();
 	direct3D->ResetViewport();
@@ -695,20 +694,6 @@ void GraphicsClass::CheckRaycast(InputClass* input)
 	}
 }
 
-void GraphicsClass::SetLightDirection(InputClass* input)
-{
-	unsigned int onekey = 0x31;
-
-	if (input->IsKeyDown(onekey))
-	{
-		Vector3 newposition = camera->GetPosition();
-
-		light->SetPosition(newposition.x, newposition.y, newposition.z);
-		light->SetLookAt(0, 0, 300);
-	}
-
-}
-
 void GraphicsClass::ChangeFillmode(D3D11_FILL_MODE fillmode)
 {
 	ID3D11RasterizerState* rasterState;
@@ -780,3 +765,12 @@ void GraphicsClass::SpawnParticles(float x, float y, float z)
 
 	particles = new ParticleSystem(direct3D->GetDevice(), x, y, z);
 }
+
+/*
+ *	TODO Shadows
+ *	Use Light Class in TerrainClass Render()
+ *	Make Depth Shader (Look at old Project)
+ *	Render Geometry to texture, using light projection
+ *	Use generated Shadow Map in Pixelshader of terrain etc
+ *
+ */

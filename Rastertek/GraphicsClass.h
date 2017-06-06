@@ -50,7 +50,6 @@ private:
 	void CheckFactorKeys(InputClass* input);
 	void CastRay(const Ray& ray);
 	void CheckRaycast(InputClass*);
-	void SetLightDirection(InputClass*);
 	void ChangeFillmode(D3D11_FILL_MODE);
 	void RenderText(string texttorender, Vector2 screenPos, bool centerOrigin);
 	void RenderText(int inttorender, Vector2 screenPos, bool centerOrigin);
