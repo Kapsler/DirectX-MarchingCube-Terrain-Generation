@@ -16,13 +16,17 @@
 #include "GeometryData.h"
 #include "ParticleSystem.h"
 #include "KdTree.h"
+#include "ShadowMap.h"
 
-const bool FULL_SCREEN = false;
-const bool VSYNC_ENABLED = true;
-const float SCREEN_DEPTH = 2000.0f;
-const float SCREEN_NEAR = 0.01f;
-const int SHADOWMAP_WIDTH = 2048;
-const int SHADOWMAP_HEIGHT = 2048;
+namespace GraphicsConfig
+{
+	const bool FULL_SCREEN = false;
+	const bool VSYNC_ENABLED = true;
+	const float SCREEN_DEPTH = 2000.0f;
+	const float SCREEN_NEAR = 0.01f;
+	const int SHADOWMAP_WIDTH = 2048;
+	const int SHADOWMAP_HEIGHT = 2048;
+}
 
 class GraphicsClass
 {
@@ -40,7 +44,7 @@ public:
 
 private:
 	void SetupPrimitiveBatch();
-	bool RenderSceneToTexture();
+	bool RenderShadowMap(const XMMATRIX& lightViewMatrix, const XMMATRIX& lightProjectionMatrix);
 	bool SetScreenBuffer(float, float, float, float);
 	bool Render(float, InputClass*, float deltaTime);
 	void CheckWireframe(InputClass*);
@@ -62,7 +66,6 @@ private:
 	LightClass* light;
 	TimerClass* timer;
 	RenderTextureClass* renderTexture;
-	DepthShaderClass* depthShader;
 
 	bool wireframeMode, wireframeKeyToggle = false, bumpinessKeyToggle = false, msmodetoggle = false, terrainKeyToggle = false;
 	bool rayToggle = false;
@@ -92,4 +95,6 @@ private:
 	GeometryData* terrain = nullptr;
 	ParticleSystem* particles = nullptr;
 	KdTree tree;
+
+	ShadowMap* shadowMap;
 };

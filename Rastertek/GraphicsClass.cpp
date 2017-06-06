@@ -12,7 +12,6 @@ GraphicsClass::GraphicsClass()
 	light = nullptr;
 	renderTexture = nullptr;
 	timer = nullptr;
-	depthShader = nullptr;
 	bumpiness = 1;
 	screenBuffer = nullptr;
 	screenTargetView = nullptr;
@@ -44,7 +43,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	result = direct3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
+	result = direct3D->Initialize(screenWidth, screenHeight, GraphicsConfig::VSYNC_ENABLED, hwnd, GraphicsConfig::FULL_SCREEN, GraphicsConfig::SCREEN_DEPTH, GraphicsConfig::SCREEN_NEAR);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize Direct3D", L"Error", MB_OK);
@@ -87,16 +86,18 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	{
 		return false;
 	}
-	light->SetPosition(30.0f, 100.0f, 100.0f);
+	light->SetPosition(5.0f, 5.0f, 5.0f);
 	light->SetAmbientColor(0.2f, 0.2f, 0.2f, 1.0f);
 	light->SetDiffuseColor(1.0, 1.0, 1.0, 1.0f);
 	light->SetLookAt(0.0f, 0.0f, 0.0f);
-	light->GenerateProjectionsMatrix(SCREEN_DEPTH, SCREEN_NEAR);
+	light->GenerateProjectionsMatrix(GraphicsConfig::SCREEN_DEPTH, GraphicsConfig::SCREEN_NEAR);
 
 	RegenrateTerrain();
 	//SpawnParticles(0, 0, 0);
 
 	//HARDCODED END
+
+	shadowMap = new ShadowMap(direct3D->GetDevice(), direct3D->GetCurrentSampleCount(), direct3D->GetCurrentQualityLevel());
 
 	//Create RenderToTexture
 	renderTexture = new RenderTextureClass();
@@ -105,23 +106,10 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	result = renderTexture->Initialize(direct3D->GetDevice(), SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, SCREEN_DEPTH, SCREEN_NEAR, direct3D->GetCurrentSampleCount(), direct3D->GetCurrentQualityLevel());
+	result = renderTexture->Initialize(direct3D->GetDevice(), GraphicsConfig::SHADOWMAP_WIDTH, GraphicsConfig::SHADOWMAP_HEIGHT, GraphicsConfig::SCREEN_DEPTH, GraphicsConfig::SCREEN_NEAR, direct3D->GetCurrentSampleCount(), direct3D->GetCurrentQualityLevel());
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the render to texture object.", L"Error", MB_OK);
-		return false;
-	}
-
-	depthShader = new DepthShaderClass();
-	if (!depthShader)
-	{
-		return false;
-	}
-
-	result = depthShader->Initialize(direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the depth shader object.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -146,13 +134,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 void GraphicsClass::Shutdown()
 {
-	if (depthShader)
-	{
-		depthShader->Shutdown();
-		delete depthShader;
-		depthShader = nullptr;
-	}
-
 	if (renderTexture)
 	{
 		renderTexture->Shutdown();
@@ -365,22 +346,17 @@ void GraphicsClass::SetupPrimitiveBatch()
 		&inputLayout);
 }
 
-bool GraphicsClass::RenderSceneToTexture()
-{
-	XMMATRIX lightViewMatrix, lightProjectionMatrix;
-
-	//Set texture as render target
-	renderTexture->SetRenderTarget(direct3D->GetDeviceContext());
-
-	//Clear rendertexture
-	renderTexture->ClearRenderTarget(direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
-
-	light->GenerateViewMatrix();
-
-	light->GetViewMatrix(lightViewMatrix);
-	light->GetProjectionMatrix(lightProjectionMatrix);
+bool GraphicsClass::RenderShadowMap(const XMMATRIX& lightViewMatrix, const XMMATRIX& lightProjectionMatrix)
+{	
+	shadowMap->Prepare(direct3D->GetDeviceContext());
 
 	//Geometry Goes here, Shadow Map RenderPass
+	//Loop for multiple Geometry
+	if(terrain->isGeometryGenerated)
+	{
+		terrain->SetVertexBuffer(direct3D->GetDeviceContext());
+		shadowMap->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, lightViewMatrix, lightProjectionMatrix);
+	}
 
 	direct3D->SetBackBufferRenderTarget();
 	direct3D->ResetViewport();
@@ -419,13 +395,6 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	XMMATRIX viewMatrix, projectionMatrix, translateMatrix;
 	XMMATRIX lightViewMatrix, lightProjectionMatrix;
 
-	//Render scene to texture
-	//result = RenderSceneToTexture();
-	//if (!result)
-	//{
-	//	return false;
-	//}
-
 	//Generate view matrix based on camera
 	camera->DoMovement(input);
 	camera->Render();
@@ -440,7 +409,10 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	light->GenerateViewMatrix();
 	light->GetViewMatrix(lightViewMatrix);
 	light->GetProjectionMatrix(lightProjectionMatrix);
-	
+
+	//Generate Shadow Map
+	RenderShadowMap(lightViewMatrix, lightProjectionMatrix);
+
 	//clear Buffer at beginning
 	//direct3D->BeginScene(0.2f, 0.5f, 0.5f, 0.0f);
 	SetScreenBuffer(0.5f, 0.5f, 0.5f, 1.0f);

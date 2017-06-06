@@ -468,6 +468,27 @@ void GeometryData::CountGeneratedTriangles(ID3D11DeviceContext* context)
 	generatedVertexCount = stats.VSInvocations;
 	printf("%llu\n\r", generatedVertexCount);
 }
+
+ID3D11Buffer* GeometryData::GetGeometryVertexBuffer()
+{
+	return marchingCubeGSO->outputBuffer;
+}
+
+void GeometryData::SetVertexBuffer(ID3D11DeviceContext* context)
+{
+	UINT stride, offset;
+	offset = 0;
+	stride = sizeof(GeometryVertexInputType);
+
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->IASetVertexBuffers(0, 1, &marchingCubeGSO->outputBuffer, &stride, &offset);
+}
+
+UINT GeometryData::GetGeometryVertexBufferStride()
+{
+	return sizeof(GeometryVertexInputType);
+}
+
 void GeometryData::GenerateNoiseData()
 {
 	size_t index = 0u;
@@ -736,7 +757,7 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
 		bufferDesc.StructureByteStride = 0;
-		bufferDesc.ByteWidth = 10 * 1024 * 1024;
+		bufferDesc.ByteWidth = 50 * 1024 * 1024;
 
 		D3D11_SO_DECLARATION_ENTRY declarationEntry[4];
 
@@ -1007,7 +1028,9 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 	deviceContext->PSSetConstantBuffers(2, 1, &lightBuffer);
 	deviceContext->PSSetConstantBuffers(3, 1, &factorBuffer);
 
-	deviceContext->DrawAuto();
+	//DrawAuto no longer needed as we know the number of vertices generated.
+	//deviceContext->DrawAuto();
+	deviceContext->Draw(static_cast<UINT>(generatedVertexCount), 0);
 
 }
 

@@ -192,7 +192,7 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 	//Setup screen settings depending on fullscreen or windowed mode
-	if(FULL_SCREEN)
+	if(GraphicsConfig::FULL_SCREEN)
 	{
 		//If fullscreen, set full size
 		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
@@ -234,7 +234,7 @@ void SystemClass::ShutdownWindows()
 	ShowCursor(true);
 
 	//Fix display settings
-	if(FULL_SCREEN)
+	if(GraphicsConfig::FULL_SCREEN)
 	{
 		ChangeDisplaySettings(nullptr, 0);
 	}

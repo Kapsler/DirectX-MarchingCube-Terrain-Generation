@@ -78,6 +78,9 @@
     <ClCompile Include="KdTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShadowMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SystemClass.h">
@@ -155,10 +158,11 @@
     <ClInclude Include="KdTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShadowMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="DepthVertexShader.hlsl" />
-    <FxCompile Include="DepthPixelShader.hlsl" />
     <FxCompile Include="MarchingCube_GS.hlsl" />
     <FxCompile Include="MarchingCube_VS.hlsl" />
     <FxCompile Include="Triplanar_Displacement_PS.hlsl" />
@@ -168,6 +172,8 @@
     <FxCompile Include="Particle_PS.hlsl" />
     <FxCompile Include="ParticleUpdate_VS.hlsl" />
     <FxCompile Include="ParticleRender_VS.hlsl" />
+    <FxCompile Include="Depth_VS.hlsl" />
+    <FxCompile Include="Depth_PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

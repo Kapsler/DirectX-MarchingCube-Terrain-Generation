@@ -37,11 +37,15 @@ public:
 	unsigned int GetVertexCount();
 	void MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix);
 	void CountGeneratedTriangles(ID3D11DeviceContext* context);
+	ID3D11Buffer* GetGeometryVertexBuffer();
+	void SetVertexBuffer(ID3D11DeviceContext* context);
+	UINT GetGeometryVertexBufferStride();
 
 	DirectX::XMMATRIX worldMatrix;
 
 	bool isGeometryGenerated = false;
 private:
+
 	struct MatrixBufferType
 	{
 		XMMATRIX world;
