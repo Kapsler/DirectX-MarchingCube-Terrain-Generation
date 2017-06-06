@@ -276,12 +276,12 @@ void GeometryData::GenerateHelixStructure()
 	}
 }
 
-bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX world, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
+bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX world, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBufferType* matrixData;
-	EyeBufferType* eyeData;
+	LightingBufferType* lightData;
 	FactorBufferType* factorData;
 
 	//DirectX11 need matrices transposed!
@@ -301,7 +301,7 @@ bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX world, X
 	matrixData = static_cast<MatrixBufferType*>(mappedResource.pData);
 
 	//Set data
-	matrixData->world = world;
+	matrixData->world = worldM;
 	matrixData->view = viewMatrix;
 	matrixData->projection = projectionMatrix;
 
@@ -309,21 +309,22 @@ bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX world, X
 
 	// ### EyeBuffer ###
 	//Lock Buffer
-	result = context->Map(eyeBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
 	//Get pointer to data
-	eyeData = static_cast<EyeBufferType*>(mappedResource.pData);
+	lightData = static_cast<LightingBufferType*>(mappedResource.pData);
 
 	//Set data
-	eyeData->position = eyePos;
-	eyeData->forward = eyeDir;
-	eyeData->up = eyeUp;
+	lightData->cameraPosition = eyePos;
+	lightData->lightPosition = light.GetPosition();
+	lightData->diffuseColor = light.GetDiffuseColor();
+	lightData->ambientColor = light.GetAmbientColor();
 
-	context->Unmap(eyeBuffer, 0);
+	context->Unmap(lightBuffer, 0);
 
 	// ### FactorBuffer (Pixel Shader Displacement) ###
 	//Lock Buffer
@@ -475,8 +476,6 @@ void GeometryData::GenerateNoiseData()
 	{
 		for (UINT y = 0; y < m_height; y++)
 		{
-			DirectX::XMFLOAT3 center = DirectX::XMFLOAT3(m_width / 2.0f, static_cast<float>(y), m_depth / 2.0f);
-
 			for (UINT x = 0; x < m_width; x++)
 			{
 				float valueX = (float)x / (float)m_width * 3.0f;
@@ -600,18 +599,18 @@ bool GeometryData::InitializeBuffers(ID3D11Device* device)
 		}
 	}
 
-	//EyeBuffer
+	//LightingBuffer
 	{
-		//Setup Eye Buffer Description
+		//Setup Lighting Buffer Description
 		eyeBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		eyeBufferDesc.ByteWidth = sizeof(EyeBufferType);
+		eyeBufferDesc.ByteWidth = sizeof(LightingBufferType);
 		eyeBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		eyeBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		eyeBufferDesc.MiscFlags = 0;
 		eyeBufferDesc.StructureByteStride = 0;
 
 		//Make Buffer accessible
-		result = device->CreateBuffer(&eyeBufferDesc, nullptr, &eyeBuffer);
+		result = device->CreateBuffer(&eyeBufferDesc, nullptr, &lightBuffer);
 		if (FAILED(result))
 		{
 			return false;
@@ -978,14 +977,14 @@ void GeometryData::DebugPrint()
 	}
 }
 
-void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor)
+void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light)
 {
 	if (!isGeometryGenerated)
 	{
 		MarchingCubeRenderpass(deviceContext, viewMatrix, projectionMatrix);
 	}
 
-	SetBufferData(deviceContext, worldMatrix, viewMatrix, projectionMatrix, eyePos, eyeDir, eyeUp, initialSteps, refinementSteps, depthfactor);
+	SetBufferData(deviceContext, worldMatrix, viewMatrix, projectionMatrix, eyePos, initialSteps, refinementSteps, depthfactor, light);
 	UINT offset = 0, stride = sizeof(GeometryVertexInputType);
 
 	//Set Shaders
@@ -1005,7 +1004,7 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
 	//Set constant buffer
 	deviceContext->PSSetConstantBuffers(0, 1, &matrixBuffer);
-	deviceContext->PSSetConstantBuffers(2, 1, &eyeBuffer);
+	deviceContext->PSSetConstantBuffers(2, 1, &lightBuffer);
 	deviceContext->PSSetConstantBuffers(3, 1, &factorBuffer);
 
 	deviceContext->DrawAuto();

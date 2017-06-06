@@ -67,7 +67,8 @@ void CameraClass::Shutdown()
 
 XMFLOAT3 CameraClass::GetPosition()
 {
-	return XMFLOAT3(position);
+	return XMFLOAT3(position.x, position.y, position.z);
+	
 }
 
 XMFLOAT3 CameraClass::GetForward()

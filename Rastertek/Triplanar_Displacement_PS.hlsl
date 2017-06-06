@@ -20,14 +20,14 @@ cbuffer MatrixBuffer : register(b0)
     matrix projectionMatrix;
 };
 
-cbuffer Eye : register(b2)
+cbuffer LightingBuffer: register(b2)
 {
-    float3 eyePos;
+    float3 cameraPosition;
     float padding1;
-    float3 eyeLook;
+    float3 lightPosition;
     float padding2;
-    float3 eyeUp;
-    float padding3;
+    float4 diffuseColor;
+    float4 ambientColor;
 };
 
 cbuffer Factors : register(b3)
@@ -172,15 +172,12 @@ float4 main(PixelInputType input) : SV_TARGET
 {    
     float tex_scale = 1.0f;
 
-    float4 ambient = float4(0.3f, 0.3f, 0.3f, 1.0f);
-    ////float4 ambient = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    float4 diffuse = float4(1.0f, 1.0f, 1.0f, 1.0f);
-    float4 lightPos = float4(100.0f, 200.0f, 500.0f, 1.0f);
-    float4 finalColor = ambient;
+    float4 lightPos = float4(lightPosition, 1.0f);
+    float4 finalColor = ambientColor;
 
     //Get Viewing Direction
-    float4 viewDir = float4(eyePos, 1.0f);
-    viewDir = normalize(mul(viewDir, worldMatrix) - input.worldPos);
+    float4 viewDir = float4(cameraPosition, 1.0f);
+    viewDir = normalize(viewDir - input.worldPos);
     
     // Now determine a color value and bump vector for each of the 3  
     // projections, blend them, and store blended results in these two  
@@ -196,12 +193,12 @@ float4 main(PixelInputType input) : SV_TARGET
     N_for_lighting.w = 0.0f;
 
     //Diffuse Light
-    float4 lightDir = -normalize(lightPos - input.position);
+    float4 lightDir = normalize(lightPos - input.worldPos);
 
     float lightIntensity = saturate(dot(N_for_lighting, lightDir));
     if (lightIntensity > 0.0f)
     {
-        finalColor += (diffuse * lightIntensity);
+        finalColor += (diffuseColor * lightIntensity);
     }
     finalColor = saturate(finalColor);
 

@@ -10,6 +10,7 @@
 #include "PixelShader.h"
 #include "GeometryOutputShader.h"
 #include "KdTree.h"
+#include "LightClass.h"
 
 class GeometryData
 {
@@ -32,7 +33,7 @@ public:
 	~GeometryData();
 
 	void DebugPrint();
-	void Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor);
+	void Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light);
 	unsigned int GetVertexCount();
 	void MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix);
 	void CountGeneratedTriangles(ID3D11DeviceContext* context);
@@ -48,14 +49,14 @@ private:
 		XMMATRIX projection;
 	};
 
-	struct EyeBufferType
+	struct LightingBufferType
 	{
-		XMFLOAT3 position;
+		XMFLOAT3 cameraPosition;
 		float padding1;
-		XMFLOAT3 forward;
+		XMFLOAT3 lightPosition;
 		float padding2;
-		XMFLOAT3 up;
-		float padding3;
+		XMFLOAT4 diffuseColor;
+		XMFLOAT4 ambientColor;
 	};
 
 	struct FactorBufferType
@@ -95,7 +96,7 @@ private:
 	void GenerateBumpySphere();
 	void GenerateHelixStructure();
 
-	bool SetBufferData(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, XMFLOAT3 eyeDir, XMFLOAT3 eyeUp, int initialSteps, int refinementSteps, float depthfactor);
+	bool SetBufferData(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light);
 	int GetVertices(MarchingCubeVertexInputType** outVertices);
 	bool InitializeBuffers(ID3D11Device* device);
 	bool InitializeShaders(ID3D11Device* device);
@@ -119,7 +120,7 @@ private:
 	ID3D11SamplerState *m_densitySampler, *m_wrapSampler, *m_clampSampler;
 	ID3D11Buffer *m_vertexBuffer = nullptr;
 	ID3D11Buffer* m_decalDescriptionBuffer = nullptr;
-	ID3D11Buffer* matrixBuffer, *eyeBuffer, *factorBuffer;
+	ID3D11Buffer* matrixBuffer, *lightBuffer, *factorBuffer;
 	ID3D11Query* statsQuery;
 
 	VertexShader* marchingCubeVS, *geometryVS;
