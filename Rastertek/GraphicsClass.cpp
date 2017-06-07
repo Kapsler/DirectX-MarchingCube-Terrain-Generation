@@ -420,7 +420,7 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	//Render Geometry	
 	if(terrain)
 	{
-		terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), steps_initial, steps_refinement, depthfactor, *light);
+		terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), steps_initial, steps_refinement, depthfactor, *light, shadowMap->GetShaderResourceView());
 	}
 
 	//Render Particles

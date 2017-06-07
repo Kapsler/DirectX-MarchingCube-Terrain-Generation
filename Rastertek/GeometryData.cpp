@@ -283,66 +283,97 @@ bool GeometryData::SetBufferData(ID3D11DeviceContext* context, XMMATRIX world, X
 	MatrixBufferType* matrixData;
 	LightingBufferType* lightData;
 	FactorBufferType* factorData;
+	LightMatrixBufferType* lightMatrixData;
 
 	//DirectX11 need matrices transposed!
 	XMMATRIX worldM = XMMatrixTranspose(world);
 	viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
-	// ### MATRIXBUFFER ###
-	//Lock Buffer
-	result = context->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
+	XMMATRIX lightViewMatrix;
+	light.GetViewMatrix(lightViewMatrix);
+	lightViewMatrix = XMMatrixTranspose(lightViewMatrix);
+
+	XMMATRIX lightProjectionMatrix;
+	light.GetProjectionMatrix(lightProjectionMatrix);
+	lightProjectionMatrix = XMMatrixTranspose(lightProjectionMatrix);
+
 	{
-		return false;
+		// ### MATRIXBUFFER ###
+		//Lock Buffer
+		result = context->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		//Get pointer to data
+		matrixData = static_cast<MatrixBufferType*>(mappedResource.pData);
+
+		//Set data
+		matrixData->world = worldM;
+		matrixData->view = viewMatrix;
+		matrixData->projection = projectionMatrix;
+
+		context->Unmap(matrixBuffer, 0);
 	}
-
-	//Get pointer to data
-	matrixData = static_cast<MatrixBufferType*>(mappedResource.pData);
-
-	//Set data
-	matrixData->world = worldM;
-	matrixData->view = viewMatrix;
-	matrixData->projection = projectionMatrix;
-
-	context->Unmap(matrixBuffer, 0);
-
-	// ### EyeBuffer ###
-	//Lock Buffer
-	result = context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
 	{
-		return false;
+		// ### LightingBuffer ###
+		//Lock Buffer
+		result = context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		//Get pointer to data
+		lightData = static_cast<LightingBufferType*>(mappedResource.pData);
+
+		//Set data
+		lightData->cameraPosition = eyePos;
+		lightData->lightDirection = light.GetDirection();
+		lightData->diffuseColor = light.GetDiffuseColor();
+		lightData->ambientColor = light.GetAmbientColor();
+
+		context->Unmap(lightBuffer, 0);
 	}
-
-	//Get pointer to data
-	lightData = static_cast<LightingBufferType*>(mappedResource.pData);
-
-	//Set data
-	lightData->cameraPosition = eyePos;
-	lightData->lightDirection = light.GetDirection();
-	lightData->diffuseColor = light.GetDiffuseColor();
-	lightData->ambientColor = light.GetAmbientColor();
-
-	context->Unmap(lightBuffer, 0);
-
-	// ### FactorBuffer (Pixel Shader Displacement) ###
-	//Lock Buffer
-	result = context->Map(factorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
 	{
-		return false;
+		// ### FactorBuffer (Pixel Shader Displacement) ###
+		//Lock Buffer
+		result = context->Map(factorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		//Get pointer to data
+		factorData = static_cast<FactorBufferType*>(mappedResource.pData);
+
+		//Set data
+		factorData->steps_initial = initialSteps;
+		factorData->steps_refinement = refinementSteps;
+		factorData->depth_factor = depthfactor;
+
+		context->Unmap(factorBuffer, 0);
 	}
+	{
+		// ### LIGHTMATRIXBUFFER ###
+		//Lock Buffer
+		result = context->Map(lightMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		if (FAILED(result))
+		{
+			return false;
+		}
 
-	//Get pointer to data
-	factorData = static_cast<FactorBufferType*>(mappedResource.pData);
+		//Get pointer to data
+		lightMatrixData = static_cast<LightMatrixBufferType*>(mappedResource.pData);
 
-	//Set data
-	factorData->steps_initial = initialSteps;
-	factorData->steps_refinement = refinementSteps;
-	factorData->depth_factor = depthfactor;
+		//Set data
+		lightMatrixData->lightViewMatrix = lightViewMatrix;
+		lightMatrixData->lightProjectionMatrix = lightProjectionMatrix;
 
-	context->Unmap(factorBuffer, 0);
+		context->Unmap(lightMatrixBuffer, 0);
+	}
 
 	return true;
 }
@@ -570,7 +601,7 @@ int GeometryData::GetVertices(MarchingCubeVertexInputType** outVertices)
 bool GeometryData::InitializeBuffers(ID3D11Device* device)
 {
 	HRESULT result;
-	D3D11_BUFFER_DESC matrixBufferDesc, eyeBufferDesc, factorBufferDesc;
+	D3D11_BUFFER_DESC matrixBufferDesc, eyeBufferDesc, factorBufferDesc, lightMatrixBufferDesc;
 	MarchingCubeVertexInputType* vertices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData;
@@ -632,6 +663,24 @@ bool GeometryData::InitializeBuffers(ID3D11Device* device)
 
 		//Make Buffer accessible
 		result = device->CreateBuffer(&eyeBufferDesc, nullptr, &lightBuffer);
+		if (FAILED(result))
+		{
+			return false;
+		}
+	}
+
+	//LightMatrixBuffer
+	{
+		//Setup matrix Buffer Description
+		lightMatrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		lightMatrixBufferDesc.ByteWidth = sizeof(LightMatrixBufferType);
+		lightMatrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		lightMatrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		lightMatrixBufferDesc.MiscFlags = 0;
+		lightMatrixBufferDesc.StructureByteStride = 0;
+
+		//Make Buffer accessible
+		result = device->CreateBuffer(&lightMatrixBufferDesc, nullptr, &lightMatrixBuffer);
 		if (FAILED(result))
 		{
 			return false;
@@ -998,7 +1047,7 @@ void GeometryData::DebugPrint()
 	}
 }
 
-void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light)
+void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light, ID3D11ShaderResourceView* shadowMap)
 {
 	if (!isGeometryGenerated)
 	{
@@ -1018,11 +1067,14 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 	deviceContext->PSSetShaderResources(0, 2, m_colorTextures[0]->GetTextureViewArray());
 	deviceContext->PSSetShaderResources(2, 2, m_colorTextures[1]->GetTextureViewArray());
 	deviceContext->PSSetShaderResources(4, 2, m_colorTextures[2]->GetTextureViewArray());
+	deviceContext->PSSetShaderResources(6, 1, &shadowMap);
+
 
 	deviceContext->PSSetSamplers(0, 1, &m_wrapSampler);
 	deviceContext->PSSetSamplers(1, 1, &m_clampSampler);
 
 	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
+	deviceContext->VSSetConstantBuffers(1, 1, &lightMatrixBuffer);
 	//Set constant buffer
 	deviceContext->PSSetConstantBuffers(0, 1, &matrixBuffer);
 	deviceContext->PSSetConstantBuffers(2, 1, &lightBuffer);
@@ -1032,6 +1084,8 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 	//deviceContext->DrawAuto();
 	deviceContext->Draw(static_cast<UINT>(generatedVertexCount), 0);
 
+	ID3D11ShaderResourceView* pSRV = { nullptr };
+	deviceContext->PSSetShaderResources(6, 1, &pSRV);
 }
 
 unsigned GeometryData::GetVertexCount()

@@ -39,6 +39,11 @@ void ShadowMap::Render(ID3D11DeviceContext* deviceContext, const UINT& vertexCou
 	deviceContext->Draw(vertexCount, 0);
 }
 
+ID3D11ShaderResourceView* ShadowMap::GetShaderResourceView()
+{
+	return shadowMapTexture->GetShaderResourceView();
+}
+
 bool ShadowMap::InitializeBuffers(ID3D11Device* device, int sampleCount, int qualityLevel)
 {
 	bool result;

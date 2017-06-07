@@ -1,6 +1,7 @@
 Texture2D triplanarTexX[2] : register(t0);
 Texture2D triplanarTexY[2] : register(t2);
 Texture2D triplanarTexZ[2] : register(t4);
+Texture2D shadowMapTex : register(t6);
 
 SamplerState SampleTypeWrap;
 SamplerState SampleTypeClamp;
@@ -11,6 +12,7 @@ struct PixelInputType
     float4 worldPos : POSITION;
     float4 color : COLOR;
     float4 normal : NORMAL;
+    float4 lightPos : TEXCOORD0;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -180,27 +182,49 @@ float4 main(PixelInputType input) : SV_TARGET
     // Now determine a color value and bump vector for each of the 3  
     // projections, blend them, and store blended results in these two  
     // vectors:  
-    float4 blended_color; // .w hold spec value  
+    float4 blended_texture; // .w hold spec value  
     float3 blended_bump_vec;
    
-    triPlanarTexturing(input, tex_scale, viewDir, blended_color, blended_bump_vec);
+    triPlanarTexturing(input, tex_scale, viewDir, blended_texture, blended_bump_vec);
 
     // Apply bump vector to vertex-interpolated normal vector.  
     float4 N_for_lighting;
     N_for_lighting.xyz = normalize(input.normal.xyz + blended_bump_vec * 1.0f);
-    N_for_lighting.w = 0.0f;
+    N_for_lighting.w = 1.0f;
 
-    //Diffuse Light
-    float4 lightDir = lightDirection;
-
-    float lightIntensity = saturate(dot(N_for_lighting, lightDir));
-    if (lightIntensity > 0.0f)
+    //Diffuse Light + Shadow Mapping
     {
-        finalColor += (diffuseColor * lightIntensity);
-    }
-    finalColor = saturate(finalColor);
+        //Rehomogonize lightPos
+        input.lightPos.xyz /= input.lightPos.w;
 
-    finalColor = finalColor * blended_color;
+        //transform clip space coords to texture space coords
+        input.lightPos.x = input.lightPos.x * 0.5f + 0.5f;
+        input.lightPos.y = -input.lightPos.y * 0.5f + 0.5f;
+
+        //Check if lightPos in frustum
+        if (saturate(input.lightPos.x) == input.lightPos.x && saturate(input.lightPos.y) == input.lightPos.y)
+        {
+            //Get Depth from ShadowMap
+            float shadowBias = 0.000001f;
+            float shadowMapDepth = shadowMapTex.Sample(SampleTypeClamp, input.lightPos.xy).r;
+
+            //If geometry is in front of depth value -> no shadow = lighting
+            if (shadowMapDepth >= input.lightPos.z - shadowBias)
+            {
+                //Apply diffuse lighting
+                float lightIntensity = saturate(dot(N_for_lighting, lightDirection));
+                
+                if (lightIntensity > 0.0f)
+                {
+                    finalColor += (diffuseColor * lightIntensity);
+                }
+            }
+        }  
+    }
+    
+    finalColor = saturate(finalColor);
+    //Add texture to color
+    finalColor = finalColor * blended_texture;
     finalColor.w = 1.0f;
 
     return finalColor;

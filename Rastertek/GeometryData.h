@@ -33,7 +33,7 @@ public:
 	~GeometryData();
 
 	void DebugPrint();
-	void Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light);
+	void Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light, ID3D11ShaderResourceView* shadowMap);
 	unsigned int GetVertexCount();
 	void MarchingCubeRenderpass(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix);
 	void CountGeneratedTriangles(ID3D11DeviceContext* context);
@@ -51,6 +51,12 @@ private:
 		XMMATRIX world;
 		XMMATRIX view;
 		XMMATRIX projection;
+	};
+
+	struct LightMatrixBufferType
+	{
+		XMMATRIX lightViewMatrix;
+		XMMATRIX lightProjectionMatrix;
 	};
 
 	struct LightingBufferType
@@ -123,7 +129,7 @@ private:
 	ID3D11SamplerState *m_densitySampler, *m_wrapSampler, *m_clampSampler;
 	ID3D11Buffer *m_vertexBuffer = nullptr;
 	ID3D11Buffer* m_decalDescriptionBuffer = nullptr;
-	ID3D11Buffer* matrixBuffer, *lightBuffer, *factorBuffer;
+	ID3D11Buffer* matrixBuffer, *lightBuffer, *factorBuffer, *lightMatrixBuffer;
 	ID3D11Query* statsQuery;
 
 	VertexShader* marchingCubeVS, *geometryVS;

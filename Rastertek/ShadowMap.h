@@ -15,6 +15,7 @@ public:
 
 	void Prepare(ID3D11DeviceContext* deviceContext);
 	void Render(ID3D11DeviceContext* deviceContext, const UINT& vertexCount, const XMMATRIX& worldMatrix, const XMMATRIX& lightViewMatrix, const XMMATRIX& lightProjectionMatrix);
+	ID3D11ShaderResourceView* GetShaderResourceView();
 
 private:
 
