@@ -12,7 +12,8 @@ struct PixelInputType
     float4 worldPos : POSITION;
     float4 color : COLOR;
     float4 normal : NORMAL;
-    float4 lightPos : TEXCOORD0;
+    float4 lightViewPos : TEXCOORD0;
+    float4 lightViewPosVSM : TEXCOORD1;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -169,10 +170,57 @@ void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 v
     blended_color.w = 1.0f;
 }
 
+//SHADOWS BEGIN
+
+float2 SampleShadowMapXByY(float2 uv)
+{
+    float2 result = 0.0f;
+    for (int x = -2; x < 3; ++x)
+    {
+        for (int y = -2; y < 3; ++y)
+        {
+            result += shadowMapTex.SampleLevel(SampleTypeClamp, uv, 0, int2(x, y)).rg;
+        }
+    }
+    result /= 25;
+    return result;
+}
+
+float linstep(float min, float max, float v)
+{
+    return clamp((v - min) / (max - min), 0.0f, 1.0f);
+}
+
+float ReduceLightBleeding(float p_max, float Amount)
+{
+  // Remove the [0, Amount] tail and linearly rescale (Amount, 1].  
+    return linstep(Amount, 1, p_max);
+}
+
+float chebyshevUpperBound(float distance, float2 uv)
+{
+	// We retrive the two moments previously stored (depth and depth*depth)
+    float2 moments = SampleShadowMapXByY(uv);
+	// Surface is fully lit. as the current fragment is before the light occluder
+    float p = distance <= moments.x;
+		// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
+		// How likely this pixel is to be lit (p_max)
+    float variance = moments.y - (moments.x * moments.x);
+    variance = max(variance, 0.2f);
+	
+    float d = distance - moments.x;
+    float p_max = variance / (variance + d * d);
+
+    p_max = ReduceLightBleeding(p_max, 0.2f);
+    return max(p, p_max);
+}
+
+//SHADOWS END
+
 float4 main(PixelInputType input) : SV_TARGET
 {    
+    bool useVSM = true;
     float tex_scale = 1.0f;
-
     float4 finalColor = ambientColor;
 
     //Get Viewing Direction
@@ -195,31 +243,68 @@ float4 main(PixelInputType input) : SV_TARGET
     //Diffuse Light + Shadow Mapping
     {
         //Rehomogonize lightPos
-        input.lightPos.xyz /= input.lightPos.w;
+        input.lightViewPos.xyz /= input.lightViewPos.w;
 
         //transform clip space coords to texture space coords
-        input.lightPos.x = input.lightPos.x * 0.5f + 0.5f;
-        input.lightPos.y = -input.lightPos.y * 0.5f + 0.5f;
-
+        input.lightViewPos.x = input.lightViewPos.x * 0.5f + 0.5f;
+        input.lightViewPos.y = -input.lightViewPos.y * 0.5f + 0.5f;
+        
         //Check if lightPos in frustum
-        if (saturate(input.lightPos.x) == input.lightPos.x && saturate(input.lightPos.y) == input.lightPos.y)
+        if (saturate(input.lightViewPos.x) == input.lightViewPos.x && saturate(input.lightViewPos.y) == input.lightViewPos.y)
         {
-            //Get Depth from ShadowMap
-            float shadowBias = 0.000001f;
-            float shadowMapDepth = shadowMapTex.Sample(SampleTypeClamp, input.lightPos.xy).r;
-
-            //If geometry is in front of depth value -> no shadow = lighting
-            if (shadowMapDepth >= input.lightPos.z - shadowBias)
+            
+            if(!useVSM)
             {
-                //Apply diffuse lighting
-                float lightIntensity = saturate(dot(N_for_lighting, lightDirection));
-                
-                if (lightIntensity > 0.0f)
+                //Hard Shadows
                 {
-                    finalColor += (diffuseColor * lightIntensity);
+                    //Get Depth from ShadowMap    
+                    float shadowBias = 0.000001f;
+                    float lightDepthValue = input.lightViewPos.z;
+                    lightDepthValue -= shadowBias;
+                    float shadowMapDepth = shadowMapTex.Sample(SampleTypeClamp, input.lightViewPos.xy).b;
+
+                    //If geometry is in front of depth value -> no shadow = lighting
+                    if (lightDepthValue <= shadowMapDepth)
+                    {
+                    //Apply diffuse lighting
+                        float lightIntensity = saturate(dot(N_for_lighting, lightDirection));
+                
+                        if (lightIntensity > 0.0f)
+                        {
+                            finalColor += (diffuseColor * lightIntensity);
+                        }
+                    }
                 }
             }
-        }  
+            else
+            {
+                //VSM Shadows
+                {
+                    //Get Depth from ShadowMap
+                    float shadowBias = 0.000001f;
+                    float lightDepthValue = length(input.lightViewPosVSM);
+                    lightDepthValue -= shadowBias;
+                    float shadowContribution = chebyshevUpperBound(lightDepthValue, input.lightViewPos.xy);
+                                    
+                    float lightIntensity = saturate(dot(N_for_lighting, lightDirection));
+                
+                    if (lightIntensity > 0.0f)
+                    {
+                        finalColor += (diffuseColor * lightIntensity * shadowContribution);
+                    }
+                }
+            }
+            
+        }
+        else
+        {
+            float lightIntensity = saturate(dot(N_for_lighting, lightDirection));
+                
+            if (lightIntensity > 0.0f)
+            {
+                finalColor += (diffuseColor * lightIntensity);
+            }
+        }
     }
     
     finalColor = saturate(finalColor);

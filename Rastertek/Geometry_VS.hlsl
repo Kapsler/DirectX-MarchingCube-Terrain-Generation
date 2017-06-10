@@ -12,7 +12,8 @@ struct PixelInput
     float4 worldPos : POSITION;
     float4 color : COLOR;
     float4 normal : NORMAL;
-    float4 lightPos : TEXCOORD0;
+    float4 lightViewPos : TEXCOORD0;
+    float4 lightViewPosVSM : TEXCOORD1;
 };
 
 cbuffer MatrixBuffer : register(b0)
@@ -34,13 +35,16 @@ PixelInput main(VertexInput input)
 
     output.position = mul(input.position, worldMatrix);
     output.worldPos = output.position;
+
     output.position = mul(output.position, viewMatrix);
     output.position = mul(output.position, projectionMatrix);
+
     output.color = input.color;
+
     output.normal = input.normal;
-    output.lightPos = mul(output.worldPos, lightViewMatrix);
-    output.lightPos = mul(output.lightPos, lightProjectionMatrix);
-    //output.lightPos.w = 1.0f;
+
+    output.lightViewPosVSM = mul(output.worldPos, lightViewMatrix);
+    output.lightViewPos = mul(output.lightViewPosVSM, lightProjectionMatrix);
 
 	return output;
 }

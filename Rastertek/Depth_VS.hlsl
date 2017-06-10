@@ -13,7 +13,8 @@ struct VertexInputType
 struct PixelInputType
 {
     float4 position : SV_Position;
-    float4 depthPosition : TEXTURE0;
+    float4 fixedPointDepth : TEXTURE0;
+    float4 linearDepth : TEXCOORD1;
 };
 
 PixelInputType main(VertexInputType input)
@@ -24,9 +25,12 @@ PixelInputType main(VertexInputType input)
 
     output.position = mul(input.position, worldMatrix);
     output.position = mul(output.position, viewMatrix);
+
+    output.linearDepth = output.position;
+
     output.position = mul(output.position, projectionMatrix);
 
-    output.depthPosition = output.position;
+    output.fixedPointDepth = output.position;
 
 	return output;
 }

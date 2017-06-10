@@ -93,6 +93,7 @@ private:
 	ID3D11InputLayout* inputLayout;
 	
 	GeometryData* terrain = nullptr;
+	GeometryData* plane = nullptr;
 	ParticleSystem* particles = nullptr;
 	KdTree tree;
 

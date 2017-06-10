@@ -141,10 +141,16 @@ void GraphicsClass::Shutdown()
 		renderTexture = nullptr;
 	}
 
-	if(terrain)
+	if (terrain)
 	{
 		delete terrain;
 		terrain = nullptr;
+	}
+
+	if (plane)
+	{
+		delete plane;
+		plane = nullptr;
 	}
 
 
@@ -207,7 +213,6 @@ bool GraphicsClass::Frame(InputClass* input)
 	{
 		rotation -= 360.0f;
 	}
-
 
 	result = Render(rotation, input, deltaTime);
 	if (!result)
@@ -358,6 +363,12 @@ bool GraphicsClass::RenderShadowMap(const XMMATRIX& lightViewMatrix, const XMMAT
 		shadowMap->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, lightViewMatrix, lightProjectionMatrix);
 	}
 
+	if(plane->isGeometryGenerated)
+	{
+		plane->SetVertexBuffer(direct3D->GetDeviceContext());
+		shadowMap->Render(direct3D->GetDeviceContext(), plane->GetVertexCount(), plane->worldMatrix, lightViewMatrix, lightProjectionMatrix);
+	}
+
 	direct3D->SetBackBufferRenderTarget();
 	direct3D->ResetViewport();
 
@@ -418,9 +429,19 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	SetScreenBuffer(0.5f, 0.5f, 0.5f, 1.0f);
 
 	//Render Geometry	
-	if(terrain)
+	if (terrain)
 	{
+		if(rotate)
+		{
+			terrain->worldMatrix *= XMMatrixRotationY(deltaTime * 0.0001f);
+		}
 		terrain->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), steps_initial, steps_refinement, depthfactor, *light, shadowMap->GetShaderResourceView());
+	}
+
+	//Render Geometry	
+	if (plane)
+	{
+		plane->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), steps_initial, steps_refinement, depthfactor, *light, shadowMap->GetShaderResourceView());
 	}
 
 	//Render Particles
@@ -729,6 +750,10 @@ void GraphicsClass::RegenrateTerrain()
 	terrain = new GeometryData(64, 64, 64, GeometryData::TerrainType::HELIX, direct3D->GetDevice(), direct3D->GetDeviceContext(), &tree);
 	terrain->worldMatrix = XMMatrixIdentity() * XMMatrixScaling(5.0f, 5.0f, 5.0f);
 	//terrain->DebugPrint();
+
+	delete plane;
+	plane = new GeometryData(16, 16, 16, GeometryData::TerrainType::CUBE, direct3D->GetDevice(), direct3D->GetDeviceContext(), &tree);
+	plane->worldMatrix = XMMatrixIdentity() * XMMatrixScaling(50.0f, 0.01f, 50.0f) * XMMatrixTranslation(0.0f, -5.0f, 0.0f);
 }
 
 void GraphicsClass::SpawnParticles(float x, float y, float z)
@@ -737,12 +762,3 @@ void GraphicsClass::SpawnParticles(float x, float y, float z)
 
 	particles = new ParticleSystem(direct3D->GetDevice(), x, y, z);
 }
-
-/*
- *	TODO Shadows
- *	Use Light Class in TerrainClass Render()
- *	Make Depth Shader (Look at old Project)
- *	Render Geometry to texture, using light projection
- *	Use generated Shadow Map in Pixelshader of terrain etc
- *
- */
