@@ -153,6 +153,12 @@ void GraphicsClass::Shutdown()
 		plane = nullptr;
 	}
 
+	if (sphere)
+	{
+		delete sphere;
+		sphere = nullptr;
+	}
+
 
 	if (light)
 	{
@@ -363,10 +369,16 @@ bool GraphicsClass::RenderShadowMap(const XMMATRIX& lightViewMatrix, const XMMAT
 		shadowMap->Render(direct3D->GetDeviceContext(), terrain->GetVertexCount(), terrain->worldMatrix, lightViewMatrix, lightProjectionMatrix);
 	}
 
-	if(plane->isGeometryGenerated)
+	if (plane->isGeometryGenerated)
 	{
 		plane->SetVertexBuffer(direct3D->GetDeviceContext());
 		shadowMap->Render(direct3D->GetDeviceContext(), plane->GetVertexCount(), plane->worldMatrix, lightViewMatrix, lightProjectionMatrix);
+	}
+
+	if (sphere->isGeometryGenerated)
+	{
+		sphere->SetVertexBuffer(direct3D->GetDeviceContext());
+		shadowMap->Render(direct3D->GetDeviceContext(), sphere->GetVertexCount(), sphere->worldMatrix, lightViewMatrix, lightProjectionMatrix);
 	}
 
 	direct3D->SetBackBufferRenderTarget();
@@ -442,6 +454,12 @@ bool GraphicsClass::Render(float rotation, InputClass* input, float deltaTime)
 	if (plane)
 	{
 		plane->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), steps_initial, steps_refinement, depthfactor, *light, shadowMap->GetShaderResourceView());
+	}
+
+	//Render Geometry	
+	if (sphere)
+	{
+		sphere->Render(direct3D->GetDeviceContext(), viewMatrix, projectionMatrix, camera->GetPosition(), steps_initial, steps_refinement, depthfactor, *light, shadowMap->GetShaderResourceView());
 	}
 
 	//Render Particles
@@ -754,6 +772,10 @@ void GraphicsClass::RegenrateTerrain()
 	delete plane;
 	plane = new GeometryData(16, 16, 16, GeometryData::TerrainType::CUBE, direct3D->GetDevice(), direct3D->GetDeviceContext(), &tree);
 	plane->worldMatrix = XMMatrixIdentity() * XMMatrixScaling(50.0f, 0.01f, 50.0f) * XMMatrixTranslation(0.0f, -5.0f, 0.0f);
+
+	delete sphere;
+	sphere = new GeometryData(16, 16, 16, GeometryData::TerrainType::CUBE, direct3D->GetDevice(), direct3D->GetDeviceContext(), &tree);
+	sphere->worldMatrix = XMMatrixIdentity() * XMMatrixTranslation(3.0f, 3.0f, 3.0f);
 }
 
 void GraphicsClass::SpawnParticles(float x, float y, float z)

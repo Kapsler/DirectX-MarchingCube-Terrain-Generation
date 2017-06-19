@@ -94,6 +94,7 @@ private:
 	
 	GeometryData* terrain = nullptr;
 	GeometryData* plane = nullptr;
+	GeometryData* sphere = nullptr;
 	ParticleSystem* particles = nullptr;
 	KdTree tree;
 
