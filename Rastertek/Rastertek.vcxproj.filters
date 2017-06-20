@@ -81,6 +81,12 @@
     <ClCompile Include="ShadowMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HullShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DomainShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SystemClass.h">
@@ -161,6 +167,12 @@
     <ClInclude Include="ShadowMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="HullShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DomainShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="MarchingCube_GS.hlsl" />
@@ -174,6 +186,8 @@
     <FxCompile Include="ParticleRender_VS.hlsl" />
     <FxCompile Include="Depth_VS.hlsl" />
     <FxCompile Include="Depth_PS.hlsl" />
+    <FxCompile Include="Tessellation_HS.hlsl" />
+    <FxCompile Include="Tessellation_DS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

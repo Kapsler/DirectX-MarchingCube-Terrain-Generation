@@ -797,7 +797,6 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 	triplanarDisplacementPS = new PixelShader();
 	triplanarDisplacementPS->Initialize(device, L"Triplanar_Displacement_PS.hlsl");
 
-
 	{
 		D3D11_BUFFER_DESC bufferDesc = {};
 
@@ -842,6 +841,16 @@ bool GeometryData::InitializeShaders(ID3D11Device* device)
 
 		marchingCubeGSO = new GeometryOutputShader();
 		marchingCubeGSO->Initialize(device, L"MarchingCube_GS.hlsl", bufferDesc, declarationEntry, numElements);
+	}
+
+	{
+		hullShader = new HullShader();
+		hullShader->Initialize(device, L"Tessellation_HS.hlsl");
+	}
+
+	{
+		domainShader = new DomainShader();
+		domainShader->Initialize(device, L"Tessellation_DS.hlsl");
 	}
 
 	return true;
@@ -1059,9 +1068,12 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 
 	//Set Shaders
 	geometryVS->Set(deviceContext);
+	hullShader->Set(deviceContext);
+	domainShader->Set(deviceContext);
 	triplanarDisplacementPS->Set(deviceContext);
 
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+	//deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	deviceContext->IASetVertexBuffers(0, 1, &marchingCubeGSO->outputBuffer, &stride, &offset);
 
 	deviceContext->PSSetShaderResources(0, 2, m_colorTextures[0]->GetTextureViewArray());
@@ -1073,9 +1085,11 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 	deviceContext->PSSetSamplers(0, 1, &m_wrapSampler);
 	deviceContext->PSSetSamplers(1, 1, &m_clampSampler);
 
+	//Set constant buffer
 	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
 	deviceContext->VSSetConstantBuffers(1, 1, &lightMatrixBuffer);
-	//Set constant buffer
+	deviceContext->DSSetConstantBuffers(0, 1, &matrixBuffer);
+	deviceContext->DSSetConstantBuffers(1, 1, &lightMatrixBuffer);
 	deviceContext->PSSetConstantBuffers(0, 1, &matrixBuffer);
 	deviceContext->PSSetConstantBuffers(2, 1, &lightBuffer);
 	deviceContext->PSSetConstantBuffers(3, 1, &factorBuffer);
@@ -1086,6 +1100,8 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 
 	ID3D11ShaderResourceView* pSRV = { nullptr };
 	deviceContext->PSSetShaderResources(6, 1, &pSRV);
+	deviceContext->HSSetShader(nullptr, nullptr, 0);
+	deviceContext->DSSetShader(nullptr, nullptr, 0);
 }
 
 unsigned GeometryData::GetVertexCount()

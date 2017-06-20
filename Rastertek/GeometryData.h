@@ -6,11 +6,12 @@
 #include <chrono>
 #include "TextureClass.h"
 #include "VertexShader.h"
-#include "GeometryShader.h"
 #include "PixelShader.h"
 #include "GeometryOutputShader.h"
 #include "KdTree.h"
 #include "LightClass.h"
+#include "HullShader.h"
+#include "DomainShader.h"
 
 class GeometryData
 {
@@ -135,6 +136,8 @@ private:
 	VertexShader* marchingCubeVS, *geometryVS;
 	PixelShader* triplanarDisplacementPS;
 	GeometryOutputShader* marchingCubeGSO;
+	HullShader* hullShader;
+	DomainShader* domainShader;
 
 	//Textures
 	TextureClass* m_colorTextures[3] = {nullptr};

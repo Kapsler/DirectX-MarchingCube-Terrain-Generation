@@ -175,6 +175,8 @@
   <ItemGroup>
     <ClCompile Include="CameraClass.cpp" />
     <ClCompile Include="DepthShaderClass.cpp" />
+    <ClCompile Include="DomainShader.cpp" />
+    <ClCompile Include="HullShader.cpp" />
     <ClCompile Include="KdTree.cpp" />
     <ClCompile Include="GeometryData.cpp" />
     <ClCompile Include="GeometryDoubleBufferShader.cpp" />
@@ -199,6 +201,8 @@
   <ItemGroup>
     <ClInclude Include="CameraClass.h" />
     <ClInclude Include="DepthShaderClass.h" />
+    <ClInclude Include="DomainShader.h" />
+    <ClInclude Include="HullShader.h" />
     <ClInclude Include="KdTree.h" />
     <ClInclude Include="GeometryData.h" />
     <ClInclude Include="GeometryDoubleBufferShader.h" />
@@ -298,6 +302,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Tessellation_DS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Domain</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Tessellation_HS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Hull</ShaderType>
     </FxCompile>
     <FxCompile Include="Triplanar_Displacement_PS.hlsl">
       <FileType>Document</FileType>

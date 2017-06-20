@@ -9,7 +9,7 @@ struct VertexInput
 struct PixelInput
 {
     float4 position : SV_POSITION;
-    float4 worldPos : POSITION;
+    float4 worldPos : POSITION0;
     float4 color : COLOR;
     float4 normal : NORMAL;
     float4 lightViewPos : TEXCOORD0;
@@ -37,14 +37,15 @@ PixelInput main(VertexInput input)
     output.worldPos = output.position;
 
     output.position = mul(output.position, viewMatrix);
-    output.position = mul(output.position, projectionMatrix);
+    //output.position = mul(output.position, projectionMatrix);
 
     output.color = input.color;
 
     output.normal = input.normal;
 
     output.lightViewPosVSM = mul(output.worldPos, lightViewMatrix);
-    output.lightViewPos = mul(output.lightViewPosVSM, lightProjectionMatrix);
+    output.lightViewPos = output.lightViewPosVSM;
+    //output.lightViewPos = mul(output.lightViewPosVSM, lightProjectionMatrix);
 
 	return output;
 }
