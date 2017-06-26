@@ -99,9 +99,9 @@ float2 displacementMapping(float2 uv, Texture2D HeightMap, float2 viewDir)
 
 void triPlanarTexturing(in PixelInputType input, in float tex_scale, in float4 viewDir, out float4 blended_color, out float3 blended_bump_vec)
 {
-        // Determine the blend weights for the 3 planar projections.  
+    // Determine the blend weights for the 3 planar projections.  
     // N_orig is the vertex-interpolated normal vector.  
-    bool useDisplacement = false;
+    bool useDisplacement = true;
 
     float3 blend_weights = abs(input.normal.xyz); // Tighten up the blending zone: 4
     blend_weights = (blend_weights - 0.2) * 7;

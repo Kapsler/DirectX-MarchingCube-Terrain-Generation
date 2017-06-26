@@ -1058,6 +1058,8 @@ void GeometryData::DebugPrint()
 
 void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 eyePos, int initialSteps, int refinementSteps, float depthfactor, LightClass& light, ID3D11ShaderResourceView* shadowMap)
 {
+	bool useTessellation = true;
+
 	if (!isGeometryGenerated)
 	{
 		MarchingCubeRenderpass(deviceContext, viewMatrix, projectionMatrix);
@@ -1068,12 +1070,18 @@ void GeometryData::Render(ID3D11DeviceContext* deviceContext, XMMATRIX viewMatri
 
 	//Set Shaders
 	geometryVS->Set(deviceContext);
-	hullShader->Set(deviceContext);
-	domainShader->Set(deviceContext);
 	triplanarDisplacementPS->Set(deviceContext);
 
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
-	//deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	if(useTessellation)
+	{
+		hullShader->Set(deviceContext);
+		domainShader->Set(deviceContext);
+		deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+	} else
+	{
+		deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
+
 	deviceContext->IASetVertexBuffers(0, 1, &marchingCubeGSO->outputBuffer, &stride, &offset);
 
 	deviceContext->PSSetShaderResources(0, 2, m_colorTextures[0]->GetTextureViewArray());

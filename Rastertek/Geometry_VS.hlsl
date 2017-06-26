@@ -31,13 +31,14 @@ cbuffer LightMatrixBuffer : register(b1)
 
 PixelInput main(VertexInput input)
 {
+    bool useTessellation = true;
+
     PixelInput output;
 
     output.position = mul(input.position, worldMatrix);
     output.worldPos = output.position;
 
     output.position = mul(output.position, viewMatrix);
-    //output.position = mul(output.position, projectionMatrix);
 
     output.color = input.color;
 
@@ -45,7 +46,12 @@ PixelInput main(VertexInput input)
 
     output.lightViewPosVSM = mul(output.worldPos, lightViewMatrix);
     output.lightViewPos = output.lightViewPosVSM;
-    //output.lightViewPos = mul(output.lightViewPosVSM, lightProjectionMatrix);
 
+    if (!useTessellation)
+    {
+        output.position = mul(output.position, projectionMatrix);
+        output.lightViewPos = mul(output.lightViewPosVSM, lightProjectionMatrix);
+    }
+    
 	return output;
 }

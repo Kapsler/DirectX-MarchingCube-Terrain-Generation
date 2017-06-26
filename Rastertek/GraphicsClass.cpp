@@ -211,7 +211,7 @@ bool GraphicsClass::Frame(InputClass* input)
 	CheckFactorKeys(input);
 	CheckRaycast(input);
 
-	//tree.UpdateKDTree();
+	tree.UpdateKDTree();
 
 	// Update the rotation variable each frame.
 	rotation += static_cast<float>(XM_PI) * 0.0001f;
